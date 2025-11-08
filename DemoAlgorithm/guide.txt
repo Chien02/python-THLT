@@ -1,0 +1,353 @@
+"""
+HƯỚNG DẪN CHƯƠNG TRÌNH INTERACTIVE - MÁY NHẬN DIỆN TIẾNG ANH
+"""
+
+print("""
+╔════════════════════════════════════════════════════════════════════════════╗
+║            🎮 HƯỚNG DẪN SỬ DỤNG CHƯƠNG TRÌNH INTERACTIVE                  ║
+║           Máy Nhận Diện Tiếng Anh sử dụng Finite Automata                 ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════════════════
+PHẦN 1: CÁCH CHẠY CHƯƠNG TRÌNH
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Mở Terminal/Command Prompt
+
+2. Điều hướng đến thư mục chứa file:
+   cd "path\\to\\Source codes"
+   
+   Ví dụ:
+   cd "c:\\Users\\Admin\\Desktop\\Học tập\\Folder tài liệu\\CT121 - Tin học lí thuyết\\Project\\Source codes"
+
+3. Chạy chương trình:
+   python fa_recognizer_interactive.py
+
+4. Chương trình sẽ hiển thị MENU CHÍNH
+
+
+═══════════════════════════════════════════════════════════════════════════════
+PHẦN 2: MENU CHÍNH VÀ CÁC CHỨC NĂNG
+═══════════════════════════════════════════════════════════════════════════════
+
+MENU CHÍNH có 6 lựa chọn:
+
+1️⃣  ✅ KIỂM TRA MỘT CHUỖI
+    ────────────────────────
+    • Nhập một chuỗi bất kỳ
+    • Chương trình sẽ:
+      - Phân tích ký tự trong chuỗi
+      - Xác định ký tự hợp lệ vs không hợp lệ
+      - Đưa ra kết quả: TIẾNG ANH hay TẠP ÂM
+      - Giải thích chi tiết
+    
+    Ví dụ:
+    Nhập: hello
+    Kết quả: ✅ TIẾNG ANH ✅
+    
+    Nhập: hello123
+    Kết quả: ❌ KHÔNG PHẢI TIẾNG ANH ❌
+    
+    Nhập: back (để quay lại menu)
+
+
+2️⃣  📊 KIỂM TRA DANH SÁCH CHUỖI
+    ──────────────────────────────
+    • Nhập nhiều chuỗi (mỗi dòng một chuỗi)
+    • Chương trình sẽ:
+      - Phân loại từng chuỗi
+      - Hiển thị danh sách TIẾNG ANH
+      - Hiển thị danh sách TẠP ÂM
+      - Tính tổng cộng từng loại
+    
+    Cách sử dụng:
+    Chuỗi 1: hello
+    Chuỗi 2: hello world
+    Chuỗi 3: hello123
+    Chuỗi 4: done (để kết thúc nhập)
+    
+    Kết quả:
+    Tổng chuỗi: 3
+    ✓ Tiếng Anh: 2
+    ✗ Tạp âm: 1
+
+
+3️⃣  📈 XEM CHI TIẾT AUTOMATA
+    ──────────────────────────
+    • Hiển thị thông tin chi tiết về 3 loại automata:
+      - ε-NFA (Epsilon-NFA)
+      - NFA (Non-deterministic Finite Automata)
+      - DFA (Deterministic Finite Automata)
+    
+    Thông tin bao gồm:
+      • Số lượng trạng thái
+      • Kích thước alphabet
+      • Loại chuyển tiếp
+      • Tốc độ xử lý
+      • Ưu điểm và nhược điểm
+    
+    Bảng so sánh 3 loại automata
+
+
+4️⃣  ℹ️  GIẢI THÍCH QUY TRÌNH
+    ────────────────────────
+    • Hiển thị quy trình chuyển đổi chi tiết:
+      1. Thiết kế ε-NFA
+      2. Chuyển ε-NFA → NFA (loại bỏ epsilon)
+      3. Chuyển NFA → DFA (xác định hóa)
+      4. Sử dụng DFA cho game
+    
+    • Giải thích tốc độ so sánh
+    • Các ứng dụng thực tế
+
+
+5️⃣  🎮 MODE NÂNG CAO (VỚI TỪ ĐIỂN)
+    ──────────────────────────────────
+    • Kiểm tra chuỗi với 2 mức độ:
+      1. Cơ bản (DFA): Chỉ kiểm tra cấu trúc (chữ cái + khoảng trắng)
+      2. Nâng cao: Kết hợp từ điển tiếng Anh
+    
+    Ví dụ:
+    Nhập: hello
+    Kết quả:
+    • DFA (cơ bản): ✅ TIẾNG ANH
+    • Từ điển (nâng cao): ✅ TIẾNG ANH
+    
+    Nhập: xyzabc
+    Kết quả:
+    • DFA (cơ bản): ✅ TIẾNG ANH
+    • Từ điển (nâng cao): ❌ KHÔNG PHẢI (không trong từ điển)
+
+
+6️⃣  ❌ THOÁT
+    ────────
+    • Thoát khỏi chương trình
+
+
+═══════════════════════════════════════════════════════════════════════════════
+PHẦN 3: VÍ DỤ SỬ DỤNG THỰC TẾ
+═══════════════════════════════════════════════════════════════════════════════
+
+SCENARIO 1: Kiểm tra một chuỗi
+───────────────────────────────
+
+$ python fa_recognizer_interactive.py
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║              🤖 MÁY NHẬN DIỆN TIẾNG ANH - SỬ DỤNG FINITE AUTOMATA         ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+╔════════════════════════════════════════════════════════════════════════════╗
+║                              📋 MENU CHÍNH                                ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+1. ✅ Kiểm tra một chuỗi
+2. 📊 Kiểm tra từ điển (danh sách chuỗi)
+...
+
+Lựa chọn của bạn: 1
+
+════════════════════════════════════════════════════════════════════════════
+KIỂM TRA MỘT CHUỖI
+════════════════════════════════════════════════════════════════════════════
+
+Nhập chuỗi cần kiểm tra (hoặc 'back' để quay lại): hello world
+
+────────────────────────────────────────────────────────────────────────────
+🔍 PHÂN TÍCH KẾT QUẢ
+────────────────────────────────────────────────────────────────────────────
+
+📝 Chuỗi nhập vào: 'hello world'
+   Độ dài: 11 ký tự
+
+📌 Phân tích ký tự:
+   ✓ Ký tự hợp lệ: 'a', 'b', 'c', ..., 'd', 'e', 'h', 'l', 'o', 'r', 'w', ' '
+   
+🎯 KẾT QUẢ CUỐI CÙNG:
+   ✅ 'hello world' LÀ TIẾNG ANH ✅
+
+   Phân loại: TIẾNG ANH (Language: English)
+
+💡 Giải thích:
+   Chuỗi chỉ chứa chữ cái (a-z, A-Z) và/hoặc khoảng trắng
+   → Thỏa mãn điều kiện của tiếng Anh
+
+────────────────────────────────────────────────────────────────────────────
+
+
+SCENARIO 2: Kiểm tra danh sách chuỗi
+──────────────────────────────────────
+
+Lựa chọn của bạn: 2
+
+════════════════════════════════════════════════════════════════════════════
+KIỂM TRA DANH SÁCH CHUỖI
+════════════════════════════════════════════════════════════════════════════
+
+Nhập các chuỗi (mỗi chuỗi một dòng, nhập 'done' để kết thúc):
+(Gợi ý: hello, hello world, hello123, test@code, ...)
+
+Chuỗi 1: hello
+Chuỗi 2: python
+Chuỗi 3: hello123
+Chuỗi 4: world
+Chuỗi 5: test@
+Chuỗi 6: done
+
+────────────────────────────────────────────────────────────────────────────
+🔍 KẾT QUẢ PHÂN LOẠI
+────────────────────────────────────────────────────────────────────────────
+
+📊 Tổng chuỗi: 5
+   ✓ Tiếng Anh: 3
+   ✗ Tạp âm: 2
+
+✅ TIẾNG ANH:
+   1. 'hello'
+   2. 'python'
+   3. 'world'
+
+❌ TẠP ÂM / NGÔN NGỮ KHÁC:
+   1. 'hello123'
+   2. 'test@'
+
+────────────────────────────────────────────────────────────────────────────
+
+
+SCENARIO 3: Xem chi tiết automata
+──────────────────────────────────
+
+Lựa chọn của bạn: 3
+
+════════════════════════════════════════════════════════════════════════════
+CHI TIẾT AUTOMATA
+════════════════════════════════════════════════════════════════════════════
+
+🔧 Tạo các automata...
+
+┌─ ε-NFA (Epsilon-NFA)
+│  Trạng thái: 4
+│  Alphabet: 53 ký tự
+│  Tốc độ: ~10 MB/s
+│  Ưu điểm: Linh hoạt, dễ thiết kế
+└─
+
+┌─ NFA (Non-deterministic FA)
+│  Trạng thái: 4
+│  Alphabet: 53 ký tự
+│  Tốc độ: ~50 MB/s
+└─
+
+┌─ DFA (Deterministic FA)
+│  Trạng thái: 2
+│  Alphabet: 53 ký tự
+│  Tốc độ: ~1 GB/s
+│  Ưu điểm: Nhanh nhất (100x hơn ε-NFA)
+└─
+
+[Bảng so sánh 3 loại automata]
+
+
+═══════════════════════════════════════════════════════════════════════════════
+PHẦN 4: NHỮNG KÝ TỰ HỢP LỆ VÀ KHÔNG HỢP LỆ
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ HỢP LỆ (TIẾNG ANH):
+   • Chữ cái thường: a-z
+   • Chữ cái hoa: A-Z
+   • Khoảng trắng: space ( )
+
+❌ KHÔNG HỢP LỆ (TẠP ÂM):
+   • Chữ số: 0-9 (ví dụ: hello123)
+   • Ký tự đặc biệt: @#$%^&*() (ví dụ: test@code)
+   • Emoji: 🎮🎯😀 (ví dụ: hello 🎮)
+   • Ký tự không phải Latin: café, 你好, مرحبا
+   • Dấu câu: !?,;:'" (ví dụ: hello!)
+
+VÍ DỤ:
+   ✅ "hello" → TIẾNG ANH
+   ✅ "PYTHON" → TIẾNG ANH
+   ✅ "hello world" → TIẾNG ANH
+   ❌ "hello123" → TẠP ÂM (có chữ số)
+   ❌ "hello!" → TẠP ÂM (có dấu chấm)
+   ❌ "café" → TẠP ÂM (có ký tự accented)
+   ❌ "hello@world" → TẠP ÂM (có ký tự @)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+PHẦN 5: CÔNG NGHỆ SỬ DỤNG
+═══════════════════════════════════════════════════════════════════════════════
+
+Chương trình sử dụng ba loại Finite Automata:
+
+1️⃣  ε-NFA (Epsilon-NFA)
+    • Định nghĩa tiếng Anh: chỉ chữ cái + khoảng trắng
+    • Linh hoạt với epsilon-transitions
+    • Dễ thiết kế nhưng chậm
+
+2️⃣  NFA (Non-deterministic FA)
+    • Loại bỏ epsilon-transitions từ ε-NFA
+    • Sử dụng epsilon-closure
+    • Tốc độ trung bình
+
+3️⃣  DFA (Deterministic FA)
+    • Chuyển đổi NFA bằng Powerset Construction
+    • Xác định, nhanh nhất (100x hơn ε-NFA)
+    • Thích hợp cho production
+
+QUY TRÌNH:
+   ε-NFA --epsilon-closure--> NFA --powerset--> DFA --kiểm tra--> Kết quả
+
+
+═══════════════════════════════════════════════════════════════════════════════
+PHẦN 6: TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════════════════
+
+❌ Lỗi: ModuleNotFoundError: No module named 'fa_models'
+   ✅ Giải pháp: Đảm bảo bạn đang chạy từ thư mục "Source codes"
+
+❌ Lỗi: Chuỗi không được trống
+   ✅ Giải pháp: Nhập ít nhất 1 ký tự
+
+❌ Kết quả không đúng
+   ✅ Giải pháp: Kiểm tra lại ký tự, đặc biệt là khoảng trắng
+
+
+═══════════════════════════════════════════════════════════════════════════════
+PHẦN 7: ỨNG DỤNG THỰC TẾ
+═══════════════════════════════════════════════════════════════════════════════
+
+✓ Compiler Lexer: Phân tích token từ source code
+✓ Text Search: Tìm kiếm pattern trong văn bản
+✓ Validation: Kiểm tra email, URL, phone number
+✓ Voice Recognition: Nhận diện tiếng nói (giống bài này!)
+✓ Network Protocol: Phân tích gói tin
+✓ Natural Language Processing: Tokenization
+
+
+═══════════════════════════════════════════════════════════════════════════════
+PHẦN 8: TIPS VÀ TRICKS
+═══════════════════════════════════════════════════════════════════════════════
+
+💡 Tip 1: Khoảng trắng đếm là ký tự hợp lệ
+   "hello world" → TIẾNG ANH ✓
+   "hello  world" (hai khoảng trắng) → TIẾNG ANH ✓
+
+💡 Tip 2: Chữ hoa và chữ thường đều hợp lệ
+   "hello" → TIẾNG ANH ✓
+   "HELLO" → TIẾNG ANH ✓
+   "HeLLo" → TIẾNG ANH ✓
+
+💡 Tip 3: Chuỗi rỗng
+   "" → TẠP ÂM ✗ (chương trình yêu cầu nhập ít nhất 1 ký tự)
+
+💡 Tip 4: Mode nâng cao kiểm tra từ điển
+   Nếu từ không trong từ điển tiếng Anh phổ biến → không hợp lệ
+
+
+═══════════════════════════════════════════════════════════════════════════════
+END - HƯỚNG DẪN CHƯƠNG TRÌNH INTERACTIVE
+═══════════════════════════════════════════════════════════════════════════════
+""")
+
+

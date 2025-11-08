@@ -1,0 +1,54 @@
+This is my Studying Pygame document.
+
+#   How to generate a window.
+    - pygame.init() để khởi tạo.
+    - pygame.display.set_mode(self.window_size, 0, 32)
+    - Hoặc sử dụng self.display = pygame.Surface((x, y))
+      kết hợp với pygame.Transform.scale(self.display, self.screen.get_size())
+      để hiển thị với nhiều độ phân giải.
+
+#   Loop in the game:
+    Để game có thể chạy vòng lặp thì sử dụng while true =))
+    Bên trong while True này phải có 2 yếu tố chính sau:
+    - Nhận event:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+    
+    - Cập nhật hiển trị (với fps):
+        pygame.display.update()
+        self.clock.tick(60) # với clock = pygame.time.Clock()
+
+#   How to let images appear in the window:
+        Sử dụng hàm screen.blit(image, coord): Hàm này cho phép đặt hình lên trên
+        cửa sổ. Thứ tự đặt hình theo thứ tự dòng code.
+
+#   How to let image moves:
+        Cũng sử dụng input để nhận biết hướng đi:
+            event.type == pygame.KEYDOWN
+            event.key == pygame.K_UP...
+
+#   Collisions in this game
+        Sử dụng pygame.colliderect() và truyền vào cho nó một Rect.
+        Khi có thứ gì đó overlayed thì nó sẽ trả về một sự kiện.
+
+#   Tạo entity - Chẳng hạn như người chơi
+        Tạo class PhysicsEntity với các thuộc tính: [game, e_type, pos, size]
+        và các thuộc tính private như: velocity, speed...
+        Trong ví dụ, họ thêm hai hàm:
+            - update() - cập nhật tọa độ khi di chuyển và
+            - render() - để chỉ cho game sử dụng assets có e_type là 'player' để render.
+
+#   Tạo một lớp Utils để phụ trách việc load image và images.
+    path + pygame.image.load()
+
+#   Cách tạo tile:
+    Tạo riêng một lớp Tile:
+        tile_size
+        tilemap = {}
+        offgrid_tiles = []
+    
+    Ví dụ: {'0;1': 'grass', '0;1': 'dirt'}
+    for i in range(10):
+        self.tilemap[str(3+i) + ';10'] = {'type': 'grass', 'variant': 1, 'pos': (3+i, 10)}
