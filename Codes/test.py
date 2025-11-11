@@ -79,6 +79,6 @@ class Game:
                         self.player_movement_x[1] = False
 
             pygame.display.update()
-            self.clock.tick(60) # Maintain 30 fps
+            self.clock.tick(60) # Maintain 60 fps
     
 Game().run()

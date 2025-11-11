@@ -1,0 +1,148 @@
+
+import pygame
+from Buttons import Button
+
+pygame.init()
+
+SCREEN_W, SCREEN_H = 800, 600
+screen = pygame.display.set_mode((SCREEN_W, SCREEN_H))
+clock = pygame.time.Clock()
+
+class Scene:
+    paused = False
+    # Trả về True nếu event bị tiêu thụ và không muốn truyền xuống scene dưới
+    def handle_events(self, events):
+        return False
+    def update(self, dt):
+        pass
+    def draw(self, screen):
+        pass
+    def on_enter(self): pass
+    def on_exit(self): pass
+
+class GameplayScene(Scene):
+    def __init__(self):
+        self.color = (0, 150, 0)
+        self.x = 100
+
+    def update(self, dt):
+        # Di chuyển khi không bị paused
+        self.x += 100 * dt
+        if self.x > SCREEN_W:
+            self.x = 0
+
+    def draw(self, screen):
+        # Vẽ nền gameplay (lấp full screen)
+        screen.fill(self.color)
+        pygame.draw.circle(screen, (255, 255, 255), (int(self.x), 300), 30)
+
+class PauseMenuScene(Scene):
+    def __init__(self):
+        # surface alpha để làm overlay mờ
+        self.alpha_surface = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
+        self.font = pygame.font.Font(None, 72)
+
+    def handle_events(self, events):
+        for e in events:
+            if e.type == pygame.KEYDOWN:
+                if e.key == pygame.K_RETURN:
+                    # tiêu thụ event và yêu cầu manager đóng menu
+                    manager.pop()
+
+                    # để gameplay scene hết paused
+                    if manager.scenes[-1]:
+                        manager.scenes[-1].paused = False
+                    return True
+        # nếu không xử lý gì -> trả False để event có thể truyền xuống (tuỳ ý)
+        return True  # thường menu chắn hết input, nên trả True
+
+    def draw(self, screen):
+        # overlay mờ
+        self.alpha_surface.fill((0, 0, 0, 150))  # alpha 150/255
+        screen.blit(self.alpha_surface, (0, 0))
+        text = self.font.render("PAUSED", True, (255, 255, 255))
+        rect = text.get_rect(center=(SCREEN_W//2, SCREEN_H//2))
+        screen.blit(text, rect)
+
+class SceneManager:
+    def __init__(self):
+        self.scenes = []
+
+    def push(self, scene):
+        self.scenes.append(scene)
+        scene.on_enter()
+
+    def pop(self):
+        if self.scenes:
+            s = self.scenes.pop()
+            s.on_exit()
+    
+    def replace(self, scene):
+        # clear all
+        while self.scenes:
+            self.pop()
+        self.push(scene)
+
+    def top(self):
+        return self.scenes[-1] if self.scenes else None
+
+    def handle_events(self, events):
+        # truyền events từ top -> bottom; nếu scene trả True (đã xử lý/nhận được input của nó) thì dừng, ko truyền xuống nữa.
+        for scene in reversed(self.scenes):
+            consumed = scene.handle_events(events)
+            if consumed:
+                break
+
+    def update(self, dt):
+        # cập nhật từ bottom -> top, chỉ scene không paused được update
+        for scene in self.scenes:
+            if not getattr(scene, "paused", False):
+                scene.update(dt)
+
+    def draw(self, screen):
+        # vẽ từ bottom -> top, để scene trên cùng vẽ cuối cùng (che trên)
+        for scene in self.scenes:
+            scene.draw(screen)
+
+    # tiện ích: một hàm gọi gộp cho vòng lặp chính
+    def run_frame(self, dt, events, screen):
+        self.handle_events(events)
+        self.update(dt)
+        self.draw(screen)
+
+# khởi tạo
+manager = SceneManager()
+gameplay = GameplayScene()
+manager.push(gameplay)
+
+# UI
+pause_button = Button(300, 400, 200, 50, (0, 100, 200), "PAUSE")
+
+running = True
+while running:
+    dt = clock.tick(60) / 1000.0
+    events = pygame.event.get()
+    for event in events:
+        if event.type == pygame.QUIT:
+            running = False
+
+        # -------------------- PAUSE GAME ---------------
+        if pause_button.is_clicked(event):
+            print("Nút resume được nhấp!")
+            # Thêm pause menu scene lên trên gameplay scene: thêm trước -> dừng sau
+            if not isinstance(manager.top(), PauseMenuScene):
+                manager.push(PauseMenuScene())
+                # Tạm dừng scene nằm ngay dưới top
+                if len(manager.scenes) >= 2:
+                    manager.scenes[-2].paused = True
+        
+        #  --------------- MAIN GAMEPLAY INPUT ---------------
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            print(f"Mouse button {event.button} pressed at {event.pos}")
+
+
+    # Chạy full frame xử lý cho tất cả scene qua SceneManager
+    manager.run_frame(dt, events, screen)
+    pygame.display.flip() # Ko dùng display.update() do flip cập nhật toàn bộ cửa sổ.
+
+pygame.quit()
