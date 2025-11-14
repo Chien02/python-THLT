@@ -2,9 +2,8 @@ import pygame, sys
 
 
 # from pygame.locals import * # Import game's modules
-from Codes.SceneManager import SceneManager
-from Codes.Scenes.MainGameplayScene import MainGamePlayScene 
-from Codes.Scenes.PauseMenuScene import PauseMenuScene
+from Codes.Utils.SceneManager import SceneManager
+from Codes.Scenes.MainGameplayScene import MainGamePlayScene
 from Codes.Scenes.UILayerScene import UILayerScene
 
 class Game:

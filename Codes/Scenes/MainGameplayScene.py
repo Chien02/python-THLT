@@ -1,8 +1,11 @@
 import pygame
 from Codes.Scenes.SceneBase import Scene
+from Codes.Scenes.StringAnalyzerScene import StringAnalyzerScene
 from Codes.Utils.FrameLoader import FrameLoader
 from Codes.Utils.SpriteFrame import SpriteFrames
-from Codes.Mechanics.Chatbox.Chatbox import Chatbox
+from Codes.Mechanics.Chatbox.ChatboxSpawner import ChatboxSpawner
+from Codes.Mechanics.BannedList.BannedListGenerator import BannedListGenerator
+from Codes.Entities.Machine.Machine import Machine
 
 
 class MainGamePlayScene(Scene):
@@ -19,38 +22,40 @@ class MainGamePlayScene(Scene):
         self._bg_scaled = None
         self._bg_scaled_size = None
 
-        # Temp chatbox
-        self.chatbox = Chatbox(230, 400)
-        self.chatbox.set_text("Hello")
-
         # Machine Animation
-        idle_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Characters/Machine/idle.png", 48, 48, 4)
-        happy_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Characters/Machine/happy.png", 48, 48, 4)
-        cry_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Characters/Machine/cry.png", 48, 48, 4)
-        confused_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Characters/Machine/confused.png", 48, 48, 4)
+        machine_pos = (200, 100)
+        self.machine = Machine(machine_pos)
 
-        self.machine_sprite = SpriteFrames()
-        self.machine_sprite.add_animation("idle", idle_sprites, frame_duration=0.1)
-        self.machine_sprite.add_animation("happy", happy_sprites, frame_duration=0.1)
-        self.machine_sprite.add_animation("cry", cry_sprites, frame_duration=0.1)
-        self.machine_sprite.add_animation("confused", confused_sprites, frame_duration=0.1)
-        self.machine_sprite.play("idle")
-        self.machine_pos = (200, 100)
+        # Chatbox Spawner
+        self.chatbox_spawner = ChatboxSpawner()
+
+        # Banned List
+        self.num_of_banned = 5
+        self.banned_list = BannedListGenerator.generate(self.num_of_banned)
+
+        # Analysize section
+        self.is_analyzing = False
+        self.anal_background = pygame.image.load("Assets/Images/Backgrounds/AnalyzingBackground.png").convert()
 
     def handle_events(self, events):
-        if self.chatbox.handle_events(events):
-            return True
-        
         for event in events:
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                print(f"Mouse button {event.button} pressed at {event.pos}")
-                return True  # tiêu thụ event (nếu cần)
+            if self.chatbox_spawner.handle_events([event]): return True
+            if self.machine.handle_events([event]): return True
         return False
 
     def update(self, dt):
         # Đây là nơi cập nhật logic (nếu sau này có di chuyển hoặc animation)
-        self.machine_sprite.update(dt)
-        self.chatbox.update(dt)
+        self.machine.update(dt)
+        self.chatbox_spawner.update(dt)
+        # Collision: let the machine check against current chatboxes
+        collided = self.machine.collide_with_chatboxes(self.chatbox_spawner.chatboxes)
+        if collided:
+            if not isinstance(self.game.manager.top(), StringAnalyzerScene):
+                self.is_analyzing = True
+                self.game.manager.push(StringAnalyzerScene(self.game, self, collided, self.anal_background))
+                # Tạm dừng scene nằm ngay dưới top -- TEST
+                if isinstance(self.game.manager.scenes[-3], MainGamePlayScene):
+                    self.game.manager.scenes[-3].paused = True
 
     def draw(self, screen):
         # Vẽ nền: scale background only when screen size changes (cache result)
@@ -67,11 +72,14 @@ class MainGamePlayScene(Scene):
         else:
             screen.blit(self._bg_orig, (0, 0))
 
-        # Draw temp chatbox
-        self.chatbox.draw(screen)
-
         # Draw machine animation
-        SCALED_SIZE = (168, 168) # Just for testing
-        current_frame = self.machine_sprite.get_current_frame()
-        current_frame = pygame.transform.scale(current_frame, SCALED_SIZE)
-        screen.blit(current_frame, self.machine_pos)
+        self.machine.draw(screen)
+
+        # Draw chatboxes
+        self.chatbox_spawner.draw(screen)
+    
+    # Callback when string analysis is done
+    def get_string_analysis_done(self, results):
+        self.is_analyzing = False
+        for length, success in results:
+            print(f"String of length {length} analysis result: {'Accepted' if success else 'Rejected'}")

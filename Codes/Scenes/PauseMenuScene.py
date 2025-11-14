@@ -4,6 +4,7 @@ from Codes.Scenes.SceneBase import Scene
 from Codes.Components.Buttons import *
 from Codes.Utils.FrameLoader import FrameLoader
 from Codes.Utils.SpriteFrame import SpriteFrames
+from Codes.Entities.Machine.Machine import Machine
 
 class PauseMenuScene(Scene):
     def __init__(self, game):
@@ -19,16 +20,14 @@ class PauseMenuScene(Scene):
         self.home_button = ButtonWithImage(500, 450, "Assets/Images/UIs/Buttons/homeButton.png")
 
         # Machine's Animation
-        machine_frames = FrameLoader.load_frames_from_sheet("Assets/Images/Characters/Machine/idle.png", 48, 48, 4)
-        self.machine_sprite = SpriteFrames()
-        self.machine_sprite.add_animation("idle", machine_frames, frame_duration=0.1)
-        self.machine_sprite.play("idle")
         self.machine_pos = (200, 250)
+        self.machine = Machine(self.machine_pos)
+
 
     def handle_events(self, events):
         for event in events:
+            if self.machine.handle_events([event]): return True
             if self.resume_button.is_clicked(event):
-                print("Nút resume được nhấp!")
                 # Loại bỏ pause menu scene khỏi stack
                 self.game.manager.pop()
                 # Resume scene nằm ngay dưới top -- TEST
@@ -37,8 +36,7 @@ class PauseMenuScene(Scene):
         return True  # thường menu chắn hết input, nên trả True
 
     def update(self, dt):
-        self.machine_sprite.update(dt)
-        
+        self.machine.update(dt)
 
     def draw(self, screen):
         # overlay mờ
@@ -53,7 +51,4 @@ class PauseMenuScene(Scene):
         self.home_button.draw(screen)
         
         # Draw animation
-        SCALED_SIZE = (168, 168) # Just for testing
-        current_frame = self.machine_sprite.get_current_frame()
-        current_frame = pygame.transform.scale(current_frame, SCALED_SIZE)
-        screen.blit(current_frame, self.machine_pos)
+        self.machine.draw(screen)

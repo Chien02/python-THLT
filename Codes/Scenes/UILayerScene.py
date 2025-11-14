@@ -12,7 +12,6 @@ class UILayerScene(Scene):
     def handle_events(self, events):
         for event in events:
             if self.pause_button.is_clicked(event):
-                print("Nút resume được nhấp!")
                 # Thêm pause menu scene lên trên gameplay scene: thêm trước -> dừng sau
                 if not isinstance(self.game.manager.top(), PauseMenuScene):
                     self.game.manager.push(PauseMenuScene(self.game))
