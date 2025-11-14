@@ -1,0 +1,7 @@
+# Gọi trực tiếp từ keywords.json
+
+var data = load("res://keywords.json").get_data()
+var kw = "love"
+
+if data["keywords"].has(kw):
+    print("Keyword hợp lệ")

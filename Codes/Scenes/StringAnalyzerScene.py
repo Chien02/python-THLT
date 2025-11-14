@@ -1,6 +1,8 @@
 import pygame
+from json import load
 from Codes.Scenes.SceneBase import Scene
 from Codes.Components.Automata.DFA import DFA
+from Codes.Mechanics.WordGenerator.BannedListGenerator import BannedListGenerator
 from Codes.Utils.FrameLoader import FrameLoader
 from Codes.Utils.TweenAnimation import TweenAnimation
 
@@ -37,6 +39,13 @@ class StringAnalyzerScene(Scene):
         elif not self.texts and not self.collided_chatboxes:
             # Stop analyzing if no chatboxes collided (edge case)
             self.main_scene.get_string_analysis_done([])
+        
+        # keywords
+        self.keywords = load("res://keywords.json").get_data()
+        # Banned List
+        self.num_of_banned = 5
+        self.banned_list = BannedListGenerator.generate(self.num_of_banned)
+
 
     def handle_events(self, events):
         for event in events:

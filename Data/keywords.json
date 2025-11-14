@@ -1,0 +1,62 @@
+{
+  "keywords":
+  {
+    "heart": {
+      "group": "health",
+      "type": "heal",
+      "params": { "amount": 5 },
+      "description": "Heals the player by 5."
+    },
+    "hug": {
+      "group": "health",
+      "type": "heal",
+      "params": { "amount": 5 },
+      "description": "Heals the player by 5."
+    },
+    "love": {
+      "group": "health",
+      "type": "heal",
+      "params": { "amount": 10 },
+      "description": "Heals the player by 10."
+    },
+    "bomb": {
+      "group": "health",
+      "type": "damage",
+      "params": { "amount": -10 },
+      "description": "Deals 10 damage."
+    },
+    "hurt": {
+      "group": "health",
+      "type": "damage",
+      "params": { "amount": -5 },
+      "description": "Deals 5 damage."
+    },
+
+    "dizzy": {
+      "group": "status",
+      "type": "status",
+      "params": {
+        "effect": "vulnerable",
+        "multiplier_damage_taken": 2.0
+      },
+      "description": "Becomes vulnerable and takes double damage."
+    },
+    "boots": {
+      "group": "status",
+      "type": "status",
+      "params": {
+        "multiplier_score": 1.5
+      },
+      "description": "Earn x1.5 score."
+    },
+    "risk": {
+      "group": "status",
+      "type": "status",
+      "params": {
+        "multiplier_score": 2.0,
+        "multiplier_damage_taken": 2.0
+      },
+      "description": "Earn x2 score, but take x2 damage."
+    }
+  }
+}

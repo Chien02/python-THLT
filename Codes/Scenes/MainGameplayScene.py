@@ -1,10 +1,11 @@
 import pygame
+
 from Codes.Scenes.SceneBase import Scene
 from Codes.Scenes.StringAnalyzerScene import StringAnalyzerScene
 from Codes.Utils.FrameLoader import FrameLoader
 from Codes.Utils.SpriteFrame import SpriteFrames
 from Codes.Mechanics.Chatbox.ChatboxSpawner import ChatboxSpawner
-from Codes.Mechanics.BannedList.BannedListGenerator import BannedListGenerator
+from Codes.Mechanics.WordGenerator.BannedListGenerator import BannedListGenerator
 from Codes.Entities.Machine.Machine import Machine
 
 
@@ -29,13 +30,11 @@ class MainGamePlayScene(Scene):
         # Chatbox Spawner
         self.chatbox_spawner = ChatboxSpawner()
 
-        # Banned List
-        self.num_of_banned = 5
-        self.banned_list = BannedListGenerator.generate(self.num_of_banned)
 
         # Analysize section
         self.is_analyzing = False
         self.anal_background = pygame.image.load("Assets/Images/Backgrounds/AnalyzingBackground.png").convert()
+
 
     def handle_events(self, events):
         for event in events:
