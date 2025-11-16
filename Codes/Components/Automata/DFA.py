@@ -12,7 +12,8 @@ class DFA(FA):
             pattern_string: Chuỗi cần khớp (ví dụ: "madam", "moon")
         """
         super().__init__(pattern_string)
-        self.analyzer = analyzer
+        from Codes.Scenes.StringAnalyzerScene import StringAnalyzerScene
+        self.analyzer : StringAnalyzerScene = analyzer
         self.analyzing_flag = True
         
         #   Animation cho từng state (sẽ được init sau khi states được tạo)
@@ -200,7 +201,7 @@ class DFA(FA):
         """
         if self.analyzing_flag == False:
             return False
-        
+
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.unicode:  # Nhận tất cả
@@ -211,10 +212,14 @@ class DFA(FA):
                         # Trigger animation đúng
                         self._animate_state_correct(self.current_index)
                         self.get_next_state()
+
+                        # Cộng điểm
+                        self.analyzer.main_scene.score.add_correct()
                         # print(f"{self.get_next_state()} - accept state: {self.accept_state}")
                     else:
                         self.state_states[self.current_index]["current_sprite"] = SPRITE_TYPE.WRONG.value
-                        
+                        # Trừ điểm
+                        self.analyzer.main_scene.score.add_wrong()
                 return True
         return False
     

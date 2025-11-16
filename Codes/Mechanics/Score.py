@@ -358,62 +358,62 @@ class Score:
 
 
 # ===== DEMO =====
-if __name__ == "__main__":
-    pygame.init()
-    screen = pygame.display.set_mode((800, 600))
-    pygame.display.set_caption("Score System Demo")
-    clock = pygame.time.Clock()
+# if __name__ == "__main__":
+#     pygame.init()
+#     screen = pygame.display.set_mode((800, 600))
+#     pygame.display.set_caption("Score System Demo")
+#     clock = pygame.time.Clock()
     
-    # Tạo score manager
-    score = Score(correct_points=10, wrong_points=-5)
+#     # Tạo score manager
+#     score = Score(correct_points=10, wrong_points=-5)
     
-    running = True
-    while running:
-        dt = clock.tick(60) / 1000.0
+#     running = True
+#     while running:
+#         dt = clock.tick(60) / 1000.0
         
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    # Test: Cộng điểm
-                    points = score.add_correct()
-                    print(f"Correct! +{points} points")
-                    print(score)
-                elif event.key == pygame.K_x:
-                    # Test: Trừ điểm
-                    points = score.add_wrong()
-                    print(f"Wrong! {points} points")
-                    print(score)
-                elif event.key == pygame.K_r:
-                    # Reset
-                    score.reset()
-                    print("Score reset!")
-                elif event.key == pygame.K_s:
-                    # Show summary
-                    print("\n=== STATS ===")
-                    for key, value in score.get_stats().items():
-                        print(f"{key}: {value}")
+#         for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 running = False
+#             elif event.type == pygame.KEYDOWN:
+#                 if event.key == pygame.K_SPACE:
+#                     # Test: Cộng điểm
+#                     points = score.add_correct()
+#                     print(f"Correct! +{points} points")
+#                     print(score)
+#                 elif event.key == pygame.K_x:
+#                     # Test: Trừ điểm
+#                     points = score.add_wrong()
+#                     print(f"Wrong! {points} points")
+#                     print(score)
+#                 elif event.key == pygame.K_r:
+#                     # Reset
+#                     score.reset()
+#                     print("Score reset!")
+#                 elif event.key == pygame.K_s:
+#                     # Show summary
+#                     print("\n=== STATS ===")
+#                     for key, value in score.get_stats().items():
+#                         print(f"{key}: {value}")
         
-        # Update
-        score.update(dt)
+#         # Update
+#         score.update(dt)
         
-        # Draw
-        screen.fill((20, 20, 40))
-        score.draw(screen, 20, 20)
+#         # Draw
+#         screen.fill((20, 20, 40))
+#         score.draw(screen, 20, 20)
         
-        # Instructions
-        font = pygame.font.Font(None, 24)
-        instructions = [
-            "SPACE: Add correct (+10)",
-            "X: Add wrong (-5)",
-            "R: Reset score",
-            "S: Show stats"
-        ]
-        for i, inst in enumerate(instructions):
-            text_surf = font.render(inst, True, (200, 200, 200))
-            screen.blit(text_surf, (20, 400 + i * 30))
+#         # Instructions
+#         font = pygame.font.Font(None, 24)
+#         instructions = [
+#             "SPACE: Add correct (+10)",
+#             "X: Add wrong (-5)",
+#             "R: Reset score",
+#             "S: Show stats"
+#         ]
+#         for i, inst in enumerate(instructions):
+#             text_surf = font.render(inst, True, (200, 200, 200))
+#             screen.blit(text_surf, (20, 400 + i * 30))
         
-        pygame.display.flip()
+#         pygame.display.flip()
     
-    pygame.quit()
+#     pygame.quit()

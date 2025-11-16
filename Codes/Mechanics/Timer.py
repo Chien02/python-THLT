@@ -123,13 +123,13 @@ class Timer:
             if self.on_timeout:
                 self.on_timeout()
     
-    def draw(self, surface, x, y, width=200, height=30, style='bar'):
+    def draw(self, surface, x, y, width=300, height=30, style='bar'):
         """
         Vẽ timer lên màn hình
         
         Args:
             surface: Pygame surface
-            x, y: Vị trí góc trên trái
+            x, y: Vị trí góc giữa bên dưới
             width, height: Kích thước
             style: 'bar' | 'circle' | 'text'
         """

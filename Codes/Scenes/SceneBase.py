@@ -1,7 +1,8 @@
 class Scene:
     def __init__(self, game):
+        from main import Game
         self.paused = False
-        self.game = game # game is the Game class
+        self.game : Game = game # game is the Game class
     
     # Trả về True nếu event bị tiêu thụ/tiếp nhận/đã xử lý và không muốn truyền xuống scene dưới
     def handle_events(self, events):

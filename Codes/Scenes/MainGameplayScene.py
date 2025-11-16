@@ -6,6 +6,7 @@ from Codes.Utils.FrameLoader import FrameLoader
 from Codes.Utils.SpriteFrame import SpriteFrames
 from Codes.Mechanics.Chatbox.ChatboxSpawner import ChatboxSpawner
 from Codes.Mechanics.WordGenerator.BannedListGenerator import BannedListGenerator
+from Codes.Mechanics.Score import Score
 from Codes.Entities.Machine.Machine import Machine
 
 
@@ -34,6 +35,12 @@ class MainGamePlayScene(Scene):
         self.is_analyzing = False
         self.anal_background = pygame.image.load("Assets/Images/Backgrounds/AnalyzingBackground.png").convert()
 
+        # Khởi tạo Score Manager
+        self.score = Score(
+            correct_points=10,      # +10 điểm khi đúng
+            wrong_points=-10,        # -5 điểm khi sai
+            combo_multiplier=1.5    # Nhân 1.5x khi combo >= 5
+        )
 
     def handle_events(self, events):
         for event in events:
@@ -42,7 +49,8 @@ class MainGamePlayScene(Scene):
         return False
 
     def update(self, dt):
-        # Đây là nơi cập nhật logic (nếu sau này có di chuyển hoặc animation)
+        self.score.update(dt)
+        
         self.machine.update(dt)
         self.chatbox_spawner.update(dt)
         # Collision: let the machine check against current chatboxes
@@ -75,6 +83,9 @@ class MainGamePlayScene(Scene):
 
         # Draw chatboxes
         self.chatbox_spawner.draw(screen)
+
+        # Draw score:
+        self.score.draw(screen)
     
     # Callback when string analysis is done
     def get_string_analysis_done(self, results):

@@ -4,12 +4,14 @@ from Codes.Scenes.SceneBase import Scene
 from Codes.Components.Automata.DFA import DFA
 from Codes.Mechanics.WordGenerator.BannedListGenerator import BannedListGenerator
 from Codes.Mechanics.Timer import Timer
+from Codes.Mechanics.Score import Score
 from Codes.Utils.FrameLoader import FrameLoader
 
 class StringAnalyzerScene(Scene):
     def __init__(self, game, main_scene, collided_chatboxes: list, background):
         super().__init__(game)
-        self.main_scene = main_scene
+        from Codes.Scenes.MainGameplayScene import MainGamePlayScene
+        self.main_scene : MainGamePlayScene = main_scene
         self.collided_chatboxes = collided_chatboxes
         self._bg_orig = background
 
@@ -34,6 +36,7 @@ class StringAnalyzerScene(Scene):
         
         # keywords
         self.keywords = self.load_keywords("Data/keywords.json")["keywords"]
+
         # Banned List
         self.num_of_banned = 5
         self.banned_list = BannedListGenerator.generate(self.num_of_banned, self.num_of_banned)
@@ -62,6 +65,10 @@ class StringAnalyzerScene(Scene):
         return False
 
     def update(self, dt):
+        # update score if main scene is pause
+        if self.main_scene.paused:
+            self.main_scene.score.update(dt)
+
         # Update timer
         self.timer.update(dt)
 
@@ -91,22 +98,27 @@ class StringAnalyzerScene(Scene):
         
         self.dfa.draw_diagram(screen, self.state_sprites)
 
-        """ Vẽ timer"""
         # Background và DFA
         screen.blit(self._bg_scaled or self._bg_orig, (0, 0))
         self.dfa.draw_diagram(screen, self.state_sprites)
         
+        """ Vẽ timer"""
         # Vẽ timer (góc trên bên trái)
+        screen_center_pos = self.game.WINDOW_WIDTH / 2
+        screen_bottom_pos = self.game.WINDOW_HEIGHT - 50
         self.timer.draw(
             screen,
-            x=0 + 20,
-            y=20,
-            width=200,
-            height=30,
+            x=screen_center_pos - 150,
+            y=screen_bottom_pos,
+            width=300,
+            height=20,
             style='bar'  # hoặc 'circle', 'text'
         )
+        
+        # Vẽ điểm
+        self.main_scene.score.draw(screen)
 
-        #  Hiển thị progress
+        #  Hiển thị progress nhập chuỗi
         self._draw_progress(screen)
     
     def _draw_progress(self, screen):
@@ -151,9 +163,8 @@ class StringAnalyzerScene(Scene):
         '''Callback khi hết giờ'''
         print("Time's up!")
         
-        # #  Đánh dấu là fail
-        # if hasattr(self, 'score'):
-        #     self.score.add_wrong()
+        #  Đánh dấu là fail
+        self.main_scene.score.add_wrong()
         
         #  Chuyển sang text tiếp theo
         self.stop_analyze()
