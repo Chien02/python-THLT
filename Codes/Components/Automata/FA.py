@@ -63,7 +63,9 @@ class FA:
     
     def _calculate_positions(self, screen_width=800, screen_height=600):
         """
-        Tính toán vị trí các state để vẽ sơ đồ (căn giữa màn hình)
+        Tính toán vị trí các state để vẽ sơ đồ
+        - Nếu <= 4 states: Layout thẳng hàng ngang (căn giữa)
+        - Nếu > 4 states: Layout zigzag (căn giữa)
         
         Args:
             screen_width: Chiều rộng màn hình
@@ -71,20 +73,72 @@ class FA:
         """
         n = len(self.states)
         
-        # Layout ngang: các state xếp thành một hàng ngang
-        spacing = 150  # Khoảng cách giữa các state
+        if n <= 4:
+            # ✅ Layout thẳng hàng ngang (như cũ)
+            self._calculate_linear_positions(screen_width, screen_height)
+        else:
+            # ✅ Layout zigzag
+            self._calculate_zigzag_positions(screen_width, screen_height)
+    
+    def _calculate_linear_positions(self, screen_width, screen_height):
+        """Layout thẳng hàng ngang cho <= 4 states"""
+        n = len(self.states)
+        spacing = 150
         
-        # Tính tổng chiều rộng của đồ thị
+        # Tổng chiều rộng
         total_width = (n - 1) * spacing
+        
+        # Căn giữa
+        start_x = (screen_width - total_width) / 2
+        y = screen_height / 2
+        
+        for i, state in enumerate(self.states):
+            x = start_x + i * spacing
+            self.state_positions[state] = (x, y)
+    
+    def _calculate_zigzag_positions(self, screen_width, screen_height):
+        """
+        Layout zigzag cho > 4 states
+        Vẽ theo mẫu:
+        Row 0:  0     2     4     6
+        Row 1:    1     3     5     7
+        """
+        n = len(self.states)
+        
+        # Cấu hình
+        horizontal_spacing = 150  # Khoảng cách ngang giữa các cột
+        vertical_spacing = 120    # Khoảng cách dọc giữa 2 hàng
+        
+        # Tính số cột (làm tròn lên)
+        num_cols = (n + 1) // 2  # Mỗi cột có tối đa 2 states
+        
+        # Tổng chiều rộng của layout
+        total_width = (num_cols - 1) * horizontal_spacing
         
         # Căn giữa theo chiều ngang
         start_x = (screen_width - total_width) / 2
         
         # Căn giữa theo chiều dọc
-        y = screen_height / 2
+        center_y = screen_height / 2
+        y_top = center_y - vertical_spacing / 2
+        y_bottom = center_y + vertical_spacing / 2
         
+        # Đặt vị trí cho từng state
         for i, state in enumerate(self.states):
-            x = start_x + i * spacing
+            # State chẵn (0, 2, 4, 6...) → hàng trên
+            # State lẻ (1, 3, 5, 7...) → hàng dưới
+            
+            if i % 2 == 0:
+                # Hàng trên
+                col = i // 2
+                x = start_x + col * horizontal_spacing
+                y = y_top
+            else:
+                # Hàng dưới (offset một chút sang phải)
+                col = i // 2
+                x = start_x + col * horizontal_spacing + horizontal_spacing / 2
+                y = y_bottom
+            
             self.state_positions[state] = (x, y)
     
     def reset(self):
@@ -95,11 +149,11 @@ class FA:
     def get_next_state(self):
         if self.current_state != self.accept_state:
             self.current_index += 1
-            print(f"Current_index: {self.current_index}")
+            # print(f"Current_index: {self.current_index}")
             self.current_state = self.states[self.current_index]
 
             if self.current_state == self.accept_state:
-                print("Found accepted state")
+                # print("Found accepted state")
                 self.state_states[self.current_index]["current_sprite"] = SPRITE_TYPE.RIGHT.value
             return self.current_state
     
@@ -120,7 +174,7 @@ class FA:
     def print_info(self):
         """In thông tin DFA ra console (để debug)"""
         print(f"\n=== DFA for pattern: '{self.pattern}' ===")
-        print(f"States: {', '.join(self.states)}")
+        print(f"States: {', '.join(map(str, self.states))}")
         print(f"Alphabet: {{{', '.join(sorted(self.alphabet))}}}")
         print(f"Start state: {self.start_state}")
         print(f"Accept state: {self.accept_state}")
@@ -129,55 +183,55 @@ class FA:
             print(f"  {from_s} --{char}--> {to_s}")
         print("=" * 40)
 
-    def _draw_info(self, screen):
-        """Vẽ thông tin về DFA"""
-        font_large = pygame.font.Font(None, 36)
-        font_small = pygame.font.Font(None, 28)
+    # def _draw_info(self, screen):
+    #     """Vẽ thông tin về DFA"""
+    #     font_large = pygame.font.Font(None, 36)
+    #     font_small = pygame.font.Font(None, 28)
         
-        # Pattern với highlight
-        pattern_text = f"Pattern: "
-        text = font_large.render(pattern_text, True, (0, 0, 0))
-        screen.blit(text, (20, 20))
+    #     # Pattern với highlight
+    #     pattern_text = f"Pattern: "
+    #     text = font_large.render(pattern_text, True, (0, 0, 0))
+    #     screen.blit(text, (20, 20))
         
-        # Vẽ pattern với highlight cho phần đã match
-        x_offset = 20 + text.get_width()
-        for i, char in enumerate(self.pattern):
-            if i < self.current_index:
-                color = (0, 150, 0)  # Xanh lá cho phần đã match
-            elif i == self.current_index:
-                color = (255, 150, 0)  # Cam cho ký tự tiếp theo
-            else:
-                color = (100, 100, 100)  # Xám cho phần chưa match
+    #     # Vẽ pattern với highlight cho phần đã match
+    #     x_offset = 20 + text.get_width()
+    #     for i, char in enumerate(self.pattern):
+    #         if i < self.current_index:
+    #             color = (0, 150, 0)  # Xanh lá cho phần đã match
+    #         elif i == self.current_index:
+    #             color = (255, 150, 0)  # Cam cho ký tự tiếp theo
+    #         else:
+    #             color = (100, 100, 100)  # Xám cho phần chưa match
             
-            char_text = font_large.render(char, True, color)
-            screen.blit(char_text, (x_offset, 20))
-            x_offset += char_text.get_width() + 5
+    #         char_text = font_large.render(char, True, color)
+    #         screen.blit(char_text, (x_offset, 20))
+    #         x_offset += char_text.get_width() + 5
         
         # Current state
-        state_text = f"Current State: {self.current_state}"
-        color = (0, 150, 0) if self.is_accepted() else (0, 0, 0)
-        text = font_small.render(state_text, True, color)
-        screen.blit(text, (20, 65))
+        # state_text = f"Current State: {self.current_state}"
+        # color = (0, 150, 0) if self.is_accepted() else (0, 0, 0)
+        # text = font_small.render(state_text, True, color)
+        # screen.blit(text, (20, 65))
         
-        # Progress
-        progress_text = f"Progress: {self.current_index}/{len(self.pattern)}"
-        text = font_small.render(progress_text, True, (0, 0, 0))
-        screen.blit(text, (20, 95))
+        # # Progress
+        # progress_text = f"Progress: {self.current_index}/{len(self.pattern)}"
+        # text = font_small.render(progress_text, True, (0, 0, 0))
+        # screen.blit(text, (20, 95))
         
-        # Status
-        if self.is_accepted():
-            status_text = "ACCEPTED - Pattern matched!"
-            text = font_large.render(status_text, True, (0, 150, 0))
-            screen.blit(text, (20, 130))
-        elif self.current_index > 0:
-            status_text = f"Matching... ({self.current_index}/{len(self.pattern)})"
-            text = font_small.render(status_text, True, (255, 150, 0))
-            screen.blit(text, (20, 130))
+        # # Status
+        # if self.is_accepted():
+        #     status_text = "ACCEPTED - Pattern matched!"
+        #     text = font_large.render(status_text, True, (0, 150, 0))
+        #     screen.blit(text, (20, 130))
+        # elif self.current_index > 0:
+        #     status_text = f"Matching... ({self.current_index}/{len(self.pattern)})"
+        #     text = font_small.render(status_text, True, (255, 150, 0))
+        #     screen.blit(text, (20, 130))
         
     # Drawing section
     def _draw_states(self, screen, state_sprites):
         """Vẽ các state"""
-        font = pygame.font.Font(None, 32)
+        font = pygame.font.Font(None, 28)
         
         for state in self.states:
             pos = self.state_positions[state]
@@ -201,11 +255,13 @@ class FA:
     
     def _draw_transitions(self, screen):
         """Vẽ các transitions"""
-        font = pygame.font.Font(None, 28)
+        font = pygame.font.Font(None, 38)
         
         # Vẽ mũi tên trỏ vào trạng thái bắt đầu
-        start_arrow_pos = (10, 300)
-        self._draw_arrow(screen, start_arrow_pos, self.state_positions[0], "", font, False, True)
+        start_pos = self.state_positions[0]
+        start_arrow_pos = (start_pos[0] - 100, start_pos[1])
+        self._draw_arrow(screen, start_arrow_pos, start_pos, "", font, False, True)
+        
         for from_state, char, to_state in self.transitions:
             from_pos = self.state_positions[from_state]
             to_pos = self.state_positions[to_state]
@@ -247,7 +303,7 @@ class FA:
         line_color = self.WHITE
         pygame.draw.line(screen, line_color, start_adj, end_adj, 3)
         
-        # Vẽ mũi tên (phần này giữ nguyên)
+        # Vẽ mũi tên
         arrow_size = 15
         angle = math.atan2(dy, dx)
         
@@ -262,15 +318,30 @@ class FA:
         
         pygame.draw.polygon(screen, line_color, [end_adj, arrow_p1, arrow_p2])
         
-        # Vẽ label (giữ nguyên phần này)
+        # Vẽ label
         if label != "":
             mid_x = (start[0] + end[0]) / 2
-            mid_y = (start[1] + end[1]) / 2 - 20
+            mid_y = (start[1] + end[1]) / 2
+            
+            # Offset label để không đè lên mũi tên
+            # Tính vector vuông góc
+            perp_dx = -dy
+            perp_dy = dx
+            offset = 20
+            
+            label_x = mid_x + perp_dx * offset
+            label_y = mid_y + perp_dy * offset
             
             text = font.render(label, True, (0, 0, 0))
-            text_rect = text.get_rect(center=(mid_x, mid_y))
+            text_rect = text.get_rect(center=(label_x, label_y))
             
             bg_rect = text_rect.inflate(8, 6)
-            pygame.draw.rect(screen, (255, 255, 255), bg_rect)
-            pygame.draw.rect(screen, (0, 0, 0), bg_rect, 2)
+            bg_rect_color = self.WHITE
+            bg_border_color = self.BLACK
+
+            if start == self.state_positions[self.current_index]:
+                bg_rect_color = self.YELLOW
+
+            pygame.draw.rect(screen, bg_rect_color, bg_rect) # foreground
+            pygame.draw.rect(screen, bg_border_color, bg_rect, 2) # border
             screen.blit(text, text_rect)

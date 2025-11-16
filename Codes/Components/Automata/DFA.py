@@ -15,10 +15,10 @@ class DFA(FA):
         self.analyzer = analyzer
         self.analyzing_flag = True
         
-        # ✅ Animation cho từng state (sẽ được init sau khi states được tạo)
+        #   Animation cho từng state (sẽ được init sau khi states được tạo)
         self.state_animations = {}  # {state_index: {'scale': Tween, 'shake': Tween}}
         
-        # ✅ Animation cho toàn bộ diagram (khi hoàn thành)
+        #   Animation cho toàn bộ diagram (khi hoàn thành)
         self.diagram_y_offset = 0  # Dịch chuyển lên
         self.diagram_alpha = 255    # Độ mờ
         self.diagram_move_tween = None
@@ -37,7 +37,7 @@ class DFA(FA):
     
     def _calculate_positions(self):
         super()._calculate_positions()
-        # ✅ Init animations SAU KHI states đã được tạo
+        #   Init animations SAU KHI states đã được tạo
         self._init_state_animations()
     
     def _animate_state_correct(self, state_index):
@@ -132,7 +132,7 @@ class DFA(FA):
             screen: Pygame surface
             state_sprites: List các sprite cho states [normal, accept, refuse]
         """
-        # ✅ Nếu đang animate diagram, tạo surface tạm với alpha
+        #   Nếu đang animate diagram, tạo surface tạm với alpha
         if self.diagram_animating:
             # Tạo surface tạm với kích thước màn hình
             temp_surface = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
@@ -141,7 +141,7 @@ class DFA(FA):
             # Vẽ lên surface tạm
             self._draw_transitions(temp_surface)
             self._draw_states(temp_surface, state_sprites)
-            self._draw_info(temp_surface)
+            # self._draw_info(temp_surface)
             
             # Blit surface tạm lên screen với offset
             screen.blit(temp_surface, (0, self.diagram_y_offset))
@@ -149,17 +149,17 @@ class DFA(FA):
             # Vẽ bình thường
             self._draw_transitions(screen)
             self._draw_states(screen, state_sprites)
-            self._draw_info(screen)
+            # self._draw_info(screen)
     
     def _draw_states(self, screen, state_sprites):
         """Vẽ các state với animation"""
         font = pygame.font.Font(None, 32)
         
         for state in self.states:
-            # ✅ Lấy vị trí gốc
+            #   Lấy vị trí gốc
             base_pos = self.state_positions[state]
             
-            # ✅ Áp dụng animation
+            #   Áp dụng animation
             anim = self.state_animations[state]
             scale = anim['scale']
             shake_x = anim['shake_x']
@@ -171,7 +171,7 @@ class DFA(FA):
             sprite_idx = self.state_states[state]["current_sprite"]
             sprite = state_sprites[sprite_idx]
             
-            # ✅ Scale sprite nếu cần
+            #   Scale sprite nếu cần
             if scale != 1.0:
                 original_size = sprite.get_size()
                 new_size = (int(original_size[0] * scale), int(original_size[1] * scale))
@@ -198,6 +198,9 @@ class DFA(FA):
         Returns:
             tuple: (accepted: bool, path: list of states)
         """
+        if self.analyzing_flag == False:
+            return False
+        
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.unicode:  # Nhận tất cả
@@ -205,10 +208,10 @@ class DFA(FA):
                     if char == str(self.transitions[self.current_index][1]): # current_state's label to next_state
                         self.state_states[self.current_index]["current_sprite"] = SPRITE_TYPE.RIGHT.value
                         
-                        # ✅ Trigger animation đúng
+                        # Trigger animation đúng
                         self._animate_state_correct(self.current_index)
-                        
-                        print(f"{self.get_next_state()} - accept state: {self.accept_state}")
+                        self.get_next_state()
+                        # print(f"{self.get_next_state()} - accept state: {self.accept_state}")
                     else:
                         self.state_states[self.current_index]["current_sprite"] = SPRITE_TYPE.WRONG.value
                         
@@ -216,14 +219,13 @@ class DFA(FA):
         return False
     
     def update(self, dt):
-        # ✅ Update animations cho từng state
+        #   Update animations cho từng state
         self._update_state_animations()
         
-        # ✅ Update diagram animation
+        #   Update diagram animation
         if self.diagram_animating:
             self._update_diagram_animation()
         
-        # Logic gốc
         if not self.analyzing_flag: 
             return
             
@@ -233,16 +235,15 @@ class DFA(FA):
                 print("Analyzed!")
                 self.analyzing_flag = False
                 
-                # ✅ Trigger animation hoàn thành
+                #   Trigger animation hoàn thành
                 self._animate_diagram_complete()
                 
                 # Delay việc stop_analyze để animation chạy xong
-                # (hoặc gọi trong _update_diagram_animation khi xong)
                 return
                 
             if self.state_states[state]["current_sprite"] == SPRITE_TYPE.WRONG.value:
                 self.analyzing_flag = False
-                # ✅ Trigger animation sai
+                #   Trigger animation sai, delay việc stop_analyze để animation chạy xong
                 self._animate_state_wrong(self.current_index)
                 return
     
@@ -288,7 +289,7 @@ class DFA(FA):
             if not self.diagram_fade_tween.animating:
                 self.diagram_fade_tween = None
                 
-                # ✅ Khi cả 2 animation đều xong, gọi stop_analyze
+                #  Khi cả 2 animation đều xong, gọi stop_analyze
                 if self.diagram_move_tween is None:
                     self.diagram_animating = False
                     self.analyzer.stop_analyze()
