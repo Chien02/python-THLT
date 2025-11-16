@@ -1,4 +1,5 @@
 import pygame, sys
+import json
 
 
 # from pygame.locals import * # Import game's modules

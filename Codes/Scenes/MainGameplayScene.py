@@ -30,7 +30,6 @@ class MainGamePlayScene(Scene):
         # Chatbox Spawner
         self.chatbox_spawner = ChatboxSpawner()
 
-
         # Analysize section
         self.is_analyzing = False
         self.anal_background = pygame.image.load("Assets/Images/Backgrounds/AnalyzingBackground.png").convert()

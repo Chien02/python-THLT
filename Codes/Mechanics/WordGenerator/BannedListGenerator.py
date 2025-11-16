@@ -11,7 +11,8 @@ class BannedListGenerator:
 
         # Lấy ngẫu nhiên num ký tự không trùng nhau
         banned_list = random.sample(all_chars, num)
-
+        
+        # Debug
+        print("This is banned list: ")
+        print(banned_list)
         return banned_list
-
-print(BannedListGenerator().generate())

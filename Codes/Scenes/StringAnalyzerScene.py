@@ -1,5 +1,5 @@
 import pygame
-from json import load
+import json
 from Codes.Scenes.SceneBase import Scene
 from Codes.Components.Automata.DFA import DFA
 from Codes.Mechanics.WordGenerator.BannedListGenerator import BannedListGenerator
@@ -22,10 +22,6 @@ class StringAnalyzerScene(Scene):
         self.state_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Elements/Diagram/circles.png", frame_size[0], frame_size[1], 3)
         self.arrow_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Elements/Diagram/arrows.png", frame_size[0], frame_size[1], 3)
 
-        # Draw DFA diagram based on the collided chatbox's text
-        self.dfa : DFA = None
-        self.diagram = None
-
         # Add texts from collided chatboxes
         self.texts = []
         if self.collided_chatboxes:
@@ -35,27 +31,37 @@ class StringAnalyzerScene(Scene):
         self.current_text_index = 0
         if self.texts:
             self.current_text = self.texts[self.current_text_index]
-            self.draw_dfa_diagram()
-        elif not self.texts and not self.collided_chatboxes:
-            # Stop analyzing if no chatboxes collided (edge case)
-            self.main_scene.get_string_analysis_done([])
         
         # keywords
-        self.keywords = load("res://keywords.json").get_data()
+        self.keywords = self.load_keywords("Data/keywords.json")["keywords"]
         # Banned List
         self.num_of_banned = 5
-        self.banned_list = BannedListGenerator.generate(self.num_of_banned)
+        self.banned_list = BannedListGenerator.generate(self.num_of_banned, self.num_of_banned)
 
+        # Init_DFA based on text
+        self.dfa : DFA = DFA(self, self.current_text)
+        self.dfa.init()
+
+        if self.current_text:
+            self.analyzing = True
+        else:
+            self.analyzing = False
 
     def handle_events(self, events):
         for event in events:
             # Handle events specific to String Analyzer Scene
-            pass
+            return self.dfa.handle_events([event])
         return False
 
     def update(self, dt):
-        # Update logic for String Analyzer Scene
-        pass
+        self.dfa.update(dt)
+        # Nếu ngưng analyzing thì dừng lại và chuyển về màn hình chính
+        if not self.analyzing:
+            self.game.manager.pop()
+            # Sử dụng lazy import để tránh partially initialized module
+            from Codes.Scenes.MainGameplayScene import MainGamePlayScene
+            if isinstance(self.game.manager.scenes[-2], MainGamePlayScene):
+                self.game.manager.scenes[-2].paused = False
 
     def draw(self, screen):
         # Vẽ nền: scale background only when screen size changes (cache result)
@@ -71,37 +77,14 @@ class StringAnalyzerScene(Scene):
             screen.blit(self._bg_scaled, (0, 0))
         else:
             screen.blit(self._bg_orig, (0, 0))
+        
+        self.dfa.draw_diagram(screen, self.state_sprites)
+
+    def load_keywords(self, path):
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
     
-    def draw_dfa_diagram(self, screen):
-        if not self.init_dfa():
-            return False
-        # Base on the dfa's transitions
-        for char in self.dfa.diagram_string:
-            
-            screen.blit()
-        pass
-
-    def init_dfa(self):
-        # Contruct a dfa based on the text M = ({states}, {characters (get from the text)}, P, start_state, [end_state])
-        states = []
-        for i in range(0, len(self.current_text)):
-            states.append(str(i))
-        
-        # Characters
-        characters = []
-        for char in self.current_text:
-            # Check for the banned characters
-            if char in self.main_scene.banned_list:
-                print(f"Stop analyze cause {self.current_text} has the banned character: {char}")
-                return False
-            characters.append(char)
-        
-        start_state = states[0]
-        end_state = [states[-1:]]
-
-        # Create new dfa object
-        self.dfa = DFA(states, characters, start_state, end_state)
-        self.dfa.init_transitions()
-        return True
+    def stop_analyze(self):
+        self.analyzing = False
 
         
