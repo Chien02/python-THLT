@@ -1,9 +1,8 @@
 import pygame
 
 from Codes.Scenes.SceneBase import Scene
+from Codes.Scenes.UILayerScene import UILayerScene
 from Codes.Scenes.StringAnalyzerScene import StringAnalyzerScene
-from Codes.Utils.FrameLoader import FrameLoader
-from Codes.Utils.SpriteFrame import SpriteFrames
 from Codes.Mechanics.Chatbox.ChatboxSpawner import ChatboxSpawner
 from Codes.Mechanics.WordGenerator.BannedListGenerator import BannedListGenerator
 from Codes.Mechanics.Score import Score
@@ -29,11 +28,16 @@ class MainGamePlayScene(Scene):
         self.machine = Machine(machine_pos)
 
         # Chatbox Spawner
-        self.chatbox_spawner = ChatboxSpawner()
+        self.chatbox_spawner = ChatboxSpawner(spawn_interval=2.0, chatbox_lifetime=4.0, machine_pos=machine_pos)
 
         # Analysize section
         self.is_analyzing = False
         self.anal_background = pygame.image.load("Assets/Images/Backgrounds/AnalyzingBackground.png").convert()
+
+        # Banned List
+        self.num_of_banned = 5
+        self.banned_generator = BannedListGenerator()
+        self.banned_list = self.banned_generator.generate(self.num_of_banned)
 
         # Khởi tạo Score Manager
         self.score = Score(
@@ -55,13 +59,31 @@ class MainGamePlayScene(Scene):
         self.chatbox_spawner.update(dt)
         # Collision: let the machine check against current chatboxes
         collided = self.machine.collide_with_chatboxes(self.chatbox_spawner.chatboxes)
+
+        
+        if collided:
+            # Check for banned characters
+            for coll in collided[:]:
+                if self.banned_generator.is_in_banned_list(coll.text):
+                    collided.remove(coll)
+                    # Stop the thing and subtract the scores
+                    self.score.add_wrong()
+        
+        # One more check:
         if collided:
             if not isinstance(self.game.manager.top(), StringAnalyzerScene):
                 self.is_analyzing = True
                 self.game.manager.push(StringAnalyzerScene(self.game, self, collided, self.anal_background))
-                # Tạm dừng scene nằm ngay dưới top -- TEST
-                if isinstance(self.game.manager.scenes[-3], MainGamePlayScene):
-                    self.game.manager.scenes[-3].paused = True
+
+                # Thêm scene vào và đổi vị trí
+                """
+                    Analyzer      -->   Analyzer + Buttons
+                    UI Scene      -->   UI Scene
+                    MainGameplay  -->   MainGameplay
+                """
+                for i in range(0, len(self.game.manager.scenes)):
+                    if isinstance(self.game.manager.scenes[i] , MainGamePlayScene):
+                        self.game.manager.scenes[i].paused = True
 
     def draw(self, screen):
         # Vẽ nền: scale background only when screen size changes (cache result)

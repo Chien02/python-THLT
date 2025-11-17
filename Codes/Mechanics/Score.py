@@ -241,23 +241,23 @@ class Score:
             surface.blit(combo_surf, combo_rect)
         
         # Accuracy
-        accuracy_text = f"Accuracy: {self.get_accuracy():.1f}%"
-        accuracy_surf = font_small.render(accuracy_text, True, (100, 200, 255))
-        surface.blit(accuracy_surf, (x + 5, y + 120))
+        # accuracy_text = f"Accuracy: {self.get_accuracy():.1f}%"
+        # accuracy_surf = font_small.render(accuracy_text, True, (100, 200, 255))
+        # surface.blit(accuracy_surf, (x + 5, y + 120))
         
         # Rank
-        rank = self.get_rank()
-        rank_colors = {
-            'S': (255, 215, 0),   # Gold
-            'A': (255, 100, 100), # Red
-            'B': (100, 150, 255), # Blue
-            'C': (100, 255, 150), # Green
-            'D': (200, 200, 200), # Gray
-            'F': (100, 100, 100)  # Dark gray
-        }
-        rank_text = f"Rank: {rank}"
-        rank_surf = font_medium.render(rank_text, True, rank_colors.get(rank, (255, 255, 255)))
-        surface.blit(rank_surf, (x, y + 145))
+        # rank = self.get_rank()
+        # rank_colors = {
+        #     'S': (255, 215, 0),   # Gold
+        #     'A': (255, 100, 100), # Red
+        #     'B': (100, 150, 255), # Blue
+        #     'C': (100, 255, 150), # Green
+        #     'D': (200, 200, 200), # Gray
+        #     'F': (100, 100, 100)  # Dark gray
+        # }
+        # rank_text = f"Rank: {rank}"
+        # rank_surf = font_medium.render(rank_text, True, rank_colors.get(rank, (255, 255, 255)))
+        # surface.blit(rank_surf, (x, y + 145))
         
         # Score popup (animation khi cộng/trừ điểm)
         if self.score_popup:

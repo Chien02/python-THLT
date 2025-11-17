@@ -37,10 +37,6 @@ class StringAnalyzerScene(Scene):
         # keywords
         self.keywords = self.load_keywords("Data/keywords.json")["keywords"]
 
-        # Banned List
-        self.num_of_banned = 5
-        self.banned_list = BannedListGenerator.generate(self.num_of_banned, self.num_of_banned)
-
         # Init Timer
         self.timer = Timer(duration=5.0, auto_start=False)
         self.timer.on_timeout = self.on_timer_timeout  # Set callback
@@ -78,8 +74,9 @@ class StringAnalyzerScene(Scene):
             self.game.manager.pop()
             # Sử dụng lazy import để tránh partially initialized module
             from Codes.Scenes.MainGameplayScene import MainGamePlayScene
-            if isinstance(self.game.manager.scenes[-2], MainGamePlayScene):
-                self.game.manager.scenes[-2].paused = False
+            for i in range(0, len(self.game.manager.scenes)):
+                if isinstance(self.game.manager.scenes[i] , MainGamePlayScene):
+                    self.game.manager.scenes[i].paused = False
 
     def draw(self, screen):
         # Vẽ nền: scale background only when screen size changes (cache result)
@@ -131,21 +128,23 @@ class StringAnalyzerScene(Scene):
         progress_text = f"Text {self.current_text_index + 1} / {len(self.texts)}"
         text_surf = font.render(progress_text, True, (255, 255, 255))
         
-        # Vị trí: Góc trên bên phải
-        text_rect = text_surf.get_rect(topright=(self.screen_width - 20, 20))
+        # Vị trí: Góc trên bên trái
+        horizontal_center = self.game.base_size[0] // 2
+        below_combo_pos = 400
+        text_rect = text_surf.get_rect(center=(horizontal_center, below_combo_pos))
         
         # Background
         bg_rect = text_rect.inflate(15, 10)
         pygame.draw.rect(screen, (0, 0, 0, 180), bg_rect)
-        pygame.draw.rect(screen, (100, 200, 255), bg_rect, 2)
+        pygame.draw.rect(screen, (100, 200, 255), bg_rect, 2) # border
         
         screen.blit(text_surf, text_rect)
         
         # Progress bar
         bar_width = 200
         bar_height = 10
-        bar_x = self.screen_width - bar_width - 20
-        bar_y = 55
+        bar_x = horizontal_center - bar_width // 2
+        bar_y = below_combo_pos + 20
         
         # Progress bar
         progress = (self.current_text_index + 1) / len(self.texts)

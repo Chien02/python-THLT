@@ -1,5 +1,5 @@
 import pygame
-from Codes.Scenes.MainGameplayScene import MainGamePlayScene
+
 from Codes.Scenes.SceneBase import Scene
 from Codes.Components.Buttons import *
 from Codes.Utils.FrameLoader import FrameLoader
@@ -31,6 +31,7 @@ class PauseMenuScene(Scene):
                 # Loại bỏ pause menu scene khỏi stack
                 self.game.manager.pop()
                 # Resume scene nằm ngay dưới top -- TEST
+                from Codes.Scenes.MainGameplayScene import MainGamePlayScene
                 if isinstance(self.game.manager.scenes[-2], MainGamePlayScene):
                     self.game.manager.scenes[-2].paused = False
         return True  # thường menu chắn hết input, nên trả True
