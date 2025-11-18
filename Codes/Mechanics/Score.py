@@ -1,6 +1,10 @@
 import pygame
 import json
 import os
+import random
+
+from Codes.Utils.FrameLoader import FrameLoader
+from Codes.Utils.SpriteFrame import SpriteFrames
 
 class Score:
     """
@@ -10,7 +14,13 @@ class Score:
     - Lưu high score
     - Hiển thị điểm và combo
     """
-    
+    YELLOW = (255, 215, 0)
+    WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)
+    RED = (255, 100, 100)
+    MIXED_RED = (174, 35, 52)
+    BRIGHT_YELLOW = (251, 255, 134)
+
     def __init__(self, 
                  correct_points=10, 
                  wrong_points=-5,
@@ -46,8 +56,30 @@ class Score:
         self.high_score = self._load_high_score()
         
         # Animation effect
-        self.score_popup = None  # (text, timer, color)
+        self.score_popup = None  # (text, timer, color, type = correct or wrong)
         self.popup_duration = 1.0  # 1 giây
+        self.POPUP_TYPE = ('correct', 'wrong')
+
+        #region Visual
+        self.current_score_sprite = pygame.image.load("Assets/Images/UIs/Score/current_score.png").convert_alpha()
+        self.high_score_sprite = pygame.image.load("Assets/Images/UIs/Score/high_score.png").convert_alpha()
+        self.combo_state_1 = pygame.image.load("Assets/Images/UIs/Score/combo_state1.png").convert_alpha()
+        self.combo_state_2 = pygame.image.load("Assets/Images/UIs/Score/combo.png").convert_alpha()
+
+        self.combo1_sprite_x, self.combo1_sprite_y = (139, 51)
+        self.combo2_sprite_x, self.combo2_sprite_y = (184, 92)
+        self.combo_1_sprite = FrameLoader.load_frames_from_sheet("Assets/Images/UIs/Score/combo_state1.png", self.combo1_sprite_x, self.combo1_sprite_y, num_frames=1) 
+        self.combo_2_sprite = FrameLoader.load_frames_from_sheet("Assets/Images/UIs/Score/combo2.png", self.combo2_sprite_x, self.combo2_sprite_y, num_frames=4)
+        self.combo_sprite = SpriteFrames()
+        self.combo_sprite.add_animation('state1', self.combo_1_sprite, frame_duration=1)
+        self.combo_sprite.add_animation('state2', self.combo_2_sprite, frame_duration=0.2)
+        self.combo_sprite.set_default_animation('state1')
+        self.combo_sprite.play('state1')
+
+        self.popup_correct_sprite = pygame.image.load("Assets/Images/UIs/Score/correct.png").convert_alpha()
+        self.popup_wrong_sprite = pygame.image.load("Assets/Images/UIs/Score/wrong.png").convert_alpha()
+        
+        #endregion
         
     def add_correct(self, bonus_points=0):
         """
@@ -82,15 +114,19 @@ class Score:
         
         # Tạo popup hiển thị điểm
         if combo_bonus > 0:
-            popup_text = f"+{total_points} (Combo x{self.combo}!)"
+            popup_texts = [f"{total_points}", f"x({self.combo})!"]
         else:
-            popup_text = f"+{total_points}"
+            popup_texts = [f"{total_points}"]
         
-        self.score_popup = (popup_text, self.popup_duration, (0, 255, 0))
+        random_x = random.randrange(-100, 100, 25)
+        random_y = random.randrange(10, 60, 10)
+        random_pos = (random_x, random_y)
+
+        self.score_popup = (popup_texts, self.popup_duration, self.BRIGHT_YELLOW, random_pos, self.POPUP_TYPE[0])
         
         return total_points
     
-    def add_wrong(self):
+    def add_wrong(self, attemp=1):
         """
         Trừ điểm khi nhập sai
         
@@ -101,11 +137,14 @@ class Score:
         self.total_wrong += 1
         self.total_patterns += 1
         
-        points = self.wrong_points
+        points = self.wrong_points * attemp
         self.current_score = max(0, self.current_score + points)  # Không cho điểm âm
-        
+
+        random_x = random.randrange(-100, 100, 25)
+        random_y = random.randrange(10, 60, 10)
+        random_pos = (random_x, random_y)
         # Tạo popup hiển thị điểm bị trừ
-        self.score_popup = (f"{points}", self.popup_duration, (255, 0, 0))
+        self.score_popup = ([f"{points*(-1)}"], self.popup_duration, self.WHITE, random_pos, self.POPUP_TYPE[1])
         
         return points
     
@@ -184,20 +223,26 @@ class Score:
     
     def update(self, dt):
         """
-        Cập nhật animations (popup)
+        Cập nhật animations (popup) và animated combo (nếu có)
         
         Args:
             dt: Delta time
         """
+        # Draw combo
+        self.combo_sprite.update(dt)
+
         if self.score_popup:
-            text, timer, color = self.score_popup
+            random_x = random.randrange(-100, 100, 25)
+            random_y = random.randrange(10, 60, 10)
+            random_pos = (random_x, random_y)
+            texts, timer, color, random_pos, popup_type = self.score_popup
             timer -= dt
             if timer <= 0:
                 self.score_popup = None
             else:
-                self.score_popup = (text, timer, color)
-    
-    def draw(self, surface, x=20, y=20):
+                self.score_popup = (texts, timer, color, random_pos, popup_type)
+
+    def draw(self, surface: pygame.Surface, x=20, y=20):
         """
         Vẽ điểm số lên màn hình
         
@@ -210,34 +255,61 @@ class Score:
         font_small = pygame.font.Font(None, 24)
         
         # Điểm hiện tại
-        score_text = f"Score: {self.current_score}"
-        score_surf = font_large.render(score_text, True, (255, 255, 255))
+        padding = 20
+        score_text = f"{self.current_score}"
+        score_surf = font_large.render(score_text, True, self.WHITE)
+        score_sprite_rect = self.current_score_sprite.get_rect(topleft = (x, y))
+        score_text_rect = score_surf.get_rect()
+        score_text_rect.midright = (score_sprite_rect.midright[0] - padding, score_sprite_rect.midright[1])
         
-        # Background cho score
-        score_rect = score_surf.get_rect(topleft=(x, y))
-        bg_rect = score_rect.inflate(20, 10)
-        pygame.draw.rect(surface, (0, 0, 0, 180), bg_rect)
-        pygame.draw.rect(surface, (255, 215, 0), bg_rect, 2)
-        
-        surface.blit(score_surf, score_rect)
+        surface.blit(self.current_score_sprite, score_sprite_rect)
+        surface.blit(score_surf, score_text_rect)
         
         # High score
-        high_score_text = f"Best: {self.high_score}"
-        high_score_surf = font_small.render(high_score_text, True, (255, 215, 0))
-        surface.blit(high_score_surf, (x + 5, y + 50))
+        high_score_pos = (x, y + 75) # Thấp hơn current_score
+        high_score_sprite_rect = self.high_score_sprite.get_rect(topleft = high_score_pos)
+        high_score_text = f"{self.high_score}"
+        high_score_surf = font_small.render(high_score_text, True, self.YELLOW)
+        high_score_text_rect = high_score_surf.get_rect()
+        high_score_text_rect.midright = (high_score_sprite_rect.midright[0] - padding, high_score_sprite_rect.centery)
+        best_text = "BEST:"
+        best_text_surf = font_small.render(best_text, True, self.YELLOW)
+        best_text_rect = best_text_surf.get_rect(midleft = (x + padding, 
+                                                            high_score_sprite_rect.centery))
+
+        surface.blit(self.high_score_sprite, high_score_sprite_rect)
+        surface.blit(best_text_surf, best_text_rect)
+        surface.blit(high_score_surf, high_score_text_rect)
         
         # Combo
+        combo_state1_pos = (x, high_score_pos[1] + 60)
+        combo_state2_pos = (10, high_score_pos[1] + 30)
+        combo1_sprite_rect = self.combo_state_1.get_rect(topleft = combo_state1_pos)
+        combo2_sprite_rect = self.combo_state_2.get_rect(topleft = combo_state2_pos)
+        combo_sprite_rect = None
+
         if self.combo > 0:
             combo_text = f"Combo: x{self.combo}"
-            combo_color = (255, 100, 100) if self.combo >= 5 else (255, 255, 255)
+            combo_color = self.RED if self.combo >= 5 else self.WHITE
             combo_surf = font_medium.render(combo_text, True, combo_color)
+            combo_rect = combo_surf.get_rect()
             
-            combo_rect = combo_surf.get_rect(topleft=(x, y + 80))
-            combo_bg = combo_rect.inflate(15, 8)
-            pygame.draw.rect(surface, (0, 0, 0, 180), combo_bg)
             if self.combo >= 5:
-                pygame.draw.rect(surface, (255, 100, 100), combo_bg, 2)
-            
+                # state2
+                self.combo_sprite.play('state2', loop=True)
+                combo_sprite_rect = combo2_sprite_rect
+                combo_rect.center = (combo2_sprite_rect.midleft[0] + 80, combo2_sprite_rect.top + 52) # It's own padding
+            else:
+                # state1
+                self.combo_sprite.play('state1', loop=True)
+                combo_rect.center = combo1_sprite_rect.center
+                combo_sprite_rect = combo1_sprite_rect
+
+            # Draw animated frame
+            current_frame = self.combo_sprite.get_current_frame()
+            if not current_frame:
+                current_frame = self.combo_state_1
+            surface.blit(current_frame, combo_sprite_rect)
             surface.blit(combo_surf, combo_rect)
         
         # Accuracy
@@ -261,17 +333,38 @@ class Score:
         
         # Score popup (animation khi cộng/trừ điểm)
         if self.score_popup:
-            text, timer, color = self.score_popup
+            texts, timer, color, random_pos, popup_type = self.score_popup
+
+            # Chọn sprite phù hợp với loại popup
+            popup_sprite = None
+            if popup_type == self.POPUP_TYPE[0]:
+                popup_sprite = self.popup_correct_sprite
+            else:
+                popup_sprite = self.popup_wrong_sprite
+            
             # Fade out effect
             alpha = int((timer / self.popup_duration) * 255)
-            popup_surf = font_large.render(text, True, color)
+            popup_surf = font_large.render(texts[0], True, color)
             popup_surf.set_alpha(alpha)
-            
             # Vị trí di chuyển lên trên
             offset_y = int((1 - timer / self.popup_duration) * 50)
-            popup_pos = (x + 200, y + 20 - offset_y)
             
-            surface.blit(popup_surf, popup_pos)
+            popup_pos = ((surface.get_width() // 2) + random_pos[0], y + random_pos[1] + 100 - offset_y)
+            # Nếu có combo thì bổ sung thêm text cho combo và vị trí (nằm ngoài sprite - dịch qua bên phải)
+            combo_surf = None
+            combo_rect = None
+            if len(texts) > 1:
+                combo_surf = font_large.render(texts[1], True, color)
+                combo_rect = combo_surf.get_rect(center = (popup_pos[0] + 120, popup_pos[1]))
+            
+            popup_text_pos = (popup_pos[0] + 24, popup_pos[1] - 2)
+            popup_rect = popup_surf.get_rect(center = popup_text_pos)
+            popup_sprite_rect = popup_sprite.get_rect(center = popup_pos)
+            
+            if combo_rect and combo_surf:
+                surface.blit(combo_surf, combo_rect)
+            surface.blit(popup_sprite, popup_sprite_rect)
+            surface.blit(popup_surf, popup_rect)
     
     def draw_summary(self, surface, screen_width, screen_height):
         """

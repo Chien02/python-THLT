@@ -8,6 +8,7 @@ class SpriteFrames:
         self.timer = 0
         self.default_animation = None
         self.loop = True
+        self.animation_finished = False
 
     def set_default_animation(self, name):
         if not self.animations:
@@ -32,6 +33,7 @@ class SpriteFrames:
             self.current_frame = 0
             self.timer = 0
             self.loop = loop
+            self.animation_finished = False # Reset flag
 
     def update(self, delta_time):
         if self.current_anim is None:
@@ -40,29 +42,27 @@ class SpriteFrames:
         self.timer += delta_time
         if self.timer >= anim["frame_duration"]:
             self.timer = 0
+
             if self.loop:
+                # vòng lặp bình thường
                 self.current_frame = (self.current_frame + 1) % len(anim["frames"])
             else:
+                # animation chỉ chạy 1 lần
                 if self.current_frame < len(anim["frames"]) - 1:
                     self.current_frame += 1
-                    if self.default_animation and self.current_frame >= len(anim["frames"]) - 1:
-                        self.play(self.default_animation, loop=True)
+                else:
+                    # Đã tới frame cuối -> đánh dấu finished
+                    self.animation_finished = True
+                    # KHÔNG gọi self.play(default) ở đây để tránh reset flag;
+                    # Việc chuyển về default nên do caller (ví dụ Machine hoặc Scene) quyết định.
+
 
     def get_current_frame(self):
         if self.current_anim is None:
             return None
         return self.animations[self.current_anim]["frames"][self.current_frame]
 
-# frames_idle = load_frames_from_folder("Assets/Images/Characters/Machine/Idle")
-# frames_run = load_frames_from_folder("Assets/Images/Characters/Machine/Run")
-
-# sprite = SpriteFrames()
-# sprite.add_animation("idle", frames_idle, 0.2)
-# sprite.add_animation("run", frames_run, 0.1)
-
-# sprite.play("idle")
-
-# # Trong game loop:
-# sprite.update(delta_time)
-# screen.blit(sprite.get_current_frame(), (x, y))
+    def is_finished(self):
+        """ Kiểm tra animation đã xong chưa"""
+        return self.animation_finished
 

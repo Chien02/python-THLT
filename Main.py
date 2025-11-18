@@ -5,6 +5,7 @@ import json
 # from pygame.locals import * # Import game's modules
 from Codes.Utils.SceneManager import SceneManager
 from Codes.Scenes.MainGameplayScene import MainGamePlayScene
+from Codes.Scenes.PauseMenuScene import PauseMenuScene
 from Codes.Scenes.UILayerScene import UILayerScene
 
 class Game:
@@ -12,8 +13,8 @@ class Game:
 # UI's properties
     def __init__(self):
         SCALED_RATIO = 4
-        self.WINDOW_WIDTH = 800
-        self.WINDOW_HEIGHT = 600
+        self.WINDOW_WIDTH = 1024
+        self.WINDOW_HEIGHT = 768
         # base (logical) resolution everything is laid out in
         self.base_size = (self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
         # actual window size (may differ when user resizes)
@@ -85,7 +86,6 @@ class Game:
             self.render_surface.fill((0,0,0))
             self.manager.run_frame(delta_time, remapped_events, self.render_surface)
 
-            # Handle top-level events (like window close) using same list
             for event in events:
                 if event.type == pygame.QUIT:
                     self.running = False

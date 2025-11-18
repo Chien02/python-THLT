@@ -1,5 +1,6 @@
 import pygame
 
+from Codes.Scenes.PauseMenuScene import PauseMenuScene
 from Codes.Scenes.SceneBase import Scene
 from Codes.Scenes.UILayerScene import UILayerScene
 from Codes.Scenes.StringAnalyzerScene import StringAnalyzerScene
@@ -24,15 +25,15 @@ class MainGamePlayScene(Scene):
         self._bg_scaled_size = None
 
         # Machine Animation
-        machine_pos = (200, 100)
+        machine_pos = (320, 220)
         self.machine = Machine(machine_pos)
 
         # Chatbox Spawner
-        self.chatbox_spawner = ChatboxSpawner(spawn_interval=2.0, chatbox_lifetime=4.0, machine_pos=machine_pos)
+        self.chatbox_spawner = ChatboxSpawner(spawn_interval=4.0, chatbox_lifetime=5.0, machine_pos=machine_pos)
 
         # Analysize section
         self.is_analyzing = False
-        self.anal_background = pygame.image.load("Assets/Images/Backgrounds/AnalyzingBackground.png").convert()
+        self.analyzing_background = pygame.image.load("Assets/Images/Backgrounds/AnalyzingBackground.png").convert()
 
         # Banned List
         self.num_of_banned = 5
@@ -46,10 +47,22 @@ class MainGamePlayScene(Scene):
             combo_multiplier=1.5    # Nhân 1.5x khi combo >= 5
         )
 
+        # Các collided chatboxes được ghi lại, do phải đợi animation thực hiện xong
+        self.pending_collisions = None
+
     def handle_events(self, events):
         for event in events:
             if self.chatbox_spawner.handle_events([event]): return True
             if self.machine.handle_events([event]): return True
+
+            # Thêm pause menu scene
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    if not isinstance(self.game.manager.top(), PauseMenuScene):
+                        self.game.manager.push(PauseMenuScene(self.game))
+                        # Tạm dừng main scene
+                        self.paused = True
+                        return True
         return False
 
     def update(self, dt):
@@ -59,31 +72,47 @@ class MainGamePlayScene(Scene):
         self.chatbox_spawner.update(dt)
         # Collision: let the machine check against current chatboxes
         collided = self.machine.collide_with_chatboxes(self.chatbox_spawner.chatboxes)
-
         
         if collided:
+            self.machine.stretch()
             # Check for banned characters
+            total_wrong_attemp = 0
             for coll in collided[:]:
                 if self.banned_generator.is_in_banned_list(coll.text):
+                    total_wrong_attemp += 1
+                    print(f"Wrong: {coll.text}")
                     collided.remove(coll)
-                    # Stop the thing and subtract the scores
-                    self.score.add_wrong()
+             # Stop the thing and subtract the scores
+            if total_wrong_attemp > 0:
+                # For FX: Shake the screen
+                self.score.add_wrong(attemp=total_wrong_attemp)
         
-        # One more check:
-        if collided:
-            if not isinstance(self.game.manager.top(), StringAnalyzerScene):
-                self.is_analyzing = True
-                self.game.manager.push(StringAnalyzerScene(self.game, self, collided, self.anal_background))
+        # One more check after remove the chatboxes that have banned characters
+        if collided and self.is_analyzing == False:
+            self.pending_collisions = collided
 
-                # Thêm scene vào và đổi vị trí
-                """
-                    Analyzer      -->   Analyzer + Buttons
-                    UI Scene      -->   UI Scene
-                    MainGameplay  -->   MainGameplay
-                """
-                for i in range(0, len(self.game.manager.scenes)):
-                    if isinstance(self.game.manager.scenes[i] , MainGamePlayScene):
-                        self.game.manager.scenes[i].paused = True
+            # Set callback function for animation completion
+            self.machine._on_animation_complete = self._on_machine_animation_complete
+
+
+    def _on_machine_animation_complete(self):
+
+        if self.pending_collisions and not isinstance(self.game.manager.top(), StringAnalyzerScene):
+            self.is_analyzing = True
+            self.game.manager.push(StringAnalyzerScene(self.game,self, self.pending_collisions, self.analyzing_background))
+            
+            # Make sure to clear it after it done
+            self.pending_collisions = None
+            # Thêm scene vào và đổi vị trí
+            """
+                Analyzer      -->   Analyzer + Buttons
+                UI Scene      -->   UI Scene
+                MainGameplay  -->   MainGameplay
+            """
+            for i in range(0, len(self.game.manager.scenes)):
+                if isinstance(self.game.manager.scenes[i] , MainGamePlayScene):
+                    self.game.manager.scenes[i].paused = True
+
 
     def draw(self, screen):
         # Vẽ nền: scale background only when screen size changes (cache result)

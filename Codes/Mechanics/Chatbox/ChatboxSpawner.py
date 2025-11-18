@@ -2,22 +2,21 @@ import pygame
 import random
 import string
 from Codes.Mechanics.Chatbox.Chatbox import Chatbox
+from Codes.Utils.FrameLoader import FrameLoader
 
 class ChatboxSpawner:
-    def __init__(self, spawn_interval=2.0, chatbox_lifetime=4.0, machine_pos=None):
+
+    CHATBOX_STATE = ('idle', 'picked')
+    def __init__(self, spawn_interval=4.0, chatbox_lifetime=5.0, machine_pos=None):
         """
         base_sprites: danh sách các sprite (ít nhất 3 loại)
         spawn_interval: thời gian giữa các lượt spawn
         chatbox_lifetime: thời gian tồn tại của mỗi chatbox
         """
-        self.base_sprites = [
-            pygame.image.load("Assets/Images/Elements/Chatbox/chatbox1.png").convert_alpha(),
-            pygame.image.load("Assets/Images/Elements/Chatbox/chatbox2.png").convert_alpha(),
-            pygame.image.load("Assets/Images/Elements/Chatbox/chatbox3.png").convert_alpha(),
-            pygame.image.load("Assets/Images/Elements/Chatbox/chatbox4.png").convert_alpha(),
-            pygame.image.load("Assets/Images/Elements/Chatbox/chatbox5.png").convert_alpha(),
-            pygame.image.load("Assets/Images/Elements/Chatbox/chatbox6.png").convert_alpha(),
-        ]
+        chatbox_size = (216, 216)
+        self.base_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Elements/Chatbox/chatbox.png", chatbox_size[0], chatbox_size[1], 6)
+        self.picked_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Elements/Chatbox/chatbox_picked.png", chatbox_size[0], chatbox_size[1], 6)
+        self.holding_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Elements/Chatbox/chatbox_holding.png", chatbox_size[0], chatbox_size[1], 6)
 
         self.spawn_interval = spawn_interval
         self.chatbox_lifetime = chatbox_lifetime
@@ -25,6 +24,7 @@ class ChatboxSpawner:
         self.chatboxes: list[Chatbox] = []
         self.fixed_chatboxes = {} # {0: chatboxes[0], 1: chatboxes[1], ...}
         self.time_since_last_spawn = 0.0
+        self.spawnable = False
 
         # Định nghĩa các tập ký tự
         self.letters = string.ascii_lowercase  # a-z
@@ -39,6 +39,14 @@ class ChatboxSpawner:
         # Kiểm tra input để điều khiển chatbox
         self.user_input = []
         self.machine_pos = machine_pos
+        self.order_nums = {} # {'current_state': idle or picked or holding}
+
+        # Nếu có chatbox đang di chuyển thì dừng đếm ngược của spawner
+        # Tuy nhiên, khi mới bắt đầu thì entry timer sẽ được bật lên, trong thời gian này
+        # spanwer phải dừng spawn
+        self.sending_chatbox = False
+        self.entry_time = self.spawn_interval
+        self.entry_flag = True
 
     def _generate_random_text(self, min_length=3, max_length=5):
         """
@@ -152,44 +160,79 @@ class ChatboxSpawner:
     def _spawn_chatboxes(self):
         """Tạo ra 3 chatbox mỗi lượt."""
         self.chatboxes.clear()  # xóa hết chatbox cũ
+        self.fixed_chatboxes.clear()
+        self.user_input.clear() # Xóa input cũ
+        self.order_nums.clear()
 
         for i in range(3):
             sprite = self.base_sprites[i % len(self.base_sprites)]
             text = self._generate_random_text()
-            pos = pygame.Vector2(50 + i * 150, 400)  # for position testing
-            chatbox = Chatbox(base_sprite=sprite, text=text, pos=pos, lifetime=self.chatbox_lifetime)
+            pos = pygame.Vector2(80 + i * 195, 550)  # for position testing
+            chatbox = Chatbox(self, base_sprite=sprite, text=text, pos=pos, lifetime=self.chatbox_lifetime)
+            chatbox._on_chatbox_die = self._on_chatbox_die
             self.chatboxes.append(chatbox)
+
+            # Thêm trạng thái cho các chatbox
+            self.order_nums[str(i+1)] = {'current_state': self.CHATBOX_STATE[0]} # idle
+
+            # Đánh dấu input cho các chatbox
             self.fixed_chatboxes[str(i+1)] = chatbox
+    
+    def _on_chatbox_die(self):
+        self.sending_chatbox = False
 
     def update(self, dt):
         # Sinh chatbox lần đầu nếu chưa có
-        if not self.chatboxes:
+        if self.spawnable:
+            self.spawnable = False
             self._spawn_chatboxes()
             return
         
-        self.time_since_last_spawn += dt
-
-        # Sinh chatbox mới sau mỗi chu kỳ
-        if self.time_since_last_spawn >= (self.spawn_interval + self.chatbox_lifetime):
-            self.time_since_last_spawn = 0.0
-            self._spawn_chatboxes()
-
         # Cập nhật từng chatbox
         for chatbox in self.chatboxes[:]:
             chatbox.update(dt)
             if chatbox.is_dead():
                 self.chatboxes.remove(chatbox)
+        
+        self.time_since_last_spawn += dt
+
+        # Nếu hết entry time thì tắt cờ để spawn chatbox
+        if self.entry_flag and self.time_since_last_spawn >= self.entry_time:
+            self.entry_flag = False
+
+
+        # Sinh chatbox mới sau mỗi chu kỳ
+        if self.time_since_last_spawn >= (self.spawn_interval + self.chatbox_lifetime):
+            self.time_since_last_spawn = 0.0
+            self.spawnable
+        
+        self.spawnable = not self.sending_chatbox and not self.entry_flag and not self.chatboxes
 
     def handle_events(self, events):
-        if not self.chatboxes:
-            return False
+        if not self.chatboxes: return False
+        if self.sending_chatbox: return False # Đang gửi thì không nhận input
         
         for event in events:
             if event.type == pygame.KEYDOWN:
                  #  Nhận input 1, 2, 3
                 if event.key in [pygame.K_1, pygame.K_2, pygame.K_3]:
-                    self.user_input.append(event.unicode)
-                    print(f"Added chatbox {event.unicode} to queue")
+                    chatbox_index = max(0, int(event.unicode) - 1)
+                    # Nếu chưa có trong hàng đợi thì thêm vào, ngược lại thì bỏ ra
+                    if event.unicode in self.user_input:
+                        self.user_input.remove(event.unicode)
+                        # Đổi trạng thái trở về bình thường
+                        self.order_nums[event.unicode] = {'current_state': self.CHATBOX_STATE[0]} # 0 - 1: picked
+                        chatbox : Chatbox = self.fixed_chatboxes[event.unicode]
+                        chatbox.current_sprite = self.base_sprites[chatbox_index]
+                    else:
+                        self.user_input.append(event.unicode)
+
+                        # Đổi trạng thái của chatbox được chọn
+                        self.order_nums[event.unicode] = {'current_state': self.CHATBOX_STATE[1]} # 0 - 1: picked
+                        chatbox : Chatbox = self.fixed_chatboxes[event.unicode]
+                        chatbox.current_sprite = self.picked_sprites[chatbox_index]
+
+                        print(f"From ChatboxSpawner: Added chatbox {event.unicode} to queue")
                     return True
                 
                 #  Enter để gửi
@@ -198,31 +241,54 @@ class ChatboxSpawner:
                         return False
                     
                     print(f"Sending chatboxes: {self.user_input}")
+                    self.sending_chatbox = True
                     
                     for input_char in self.user_input:
                         chatbox_index = int(input_char)  # '1' → index 0
                             
-                        chatbox = self.fixed_chatboxes[str(chatbox_index)]
+                        chatbox : Chatbox = self.fixed_chatboxes[str(chatbox_index)]
+                        chatbox.current_sprite = self.holding_sprites[chatbox_index]
                         if not chatbox: return False
                         chatbox.move_to(self.machine_pos)
 
                     self.user_input.clear()
                     return True
-            
-                elif event.key == pygame.K_BACKSPACE:
-                    if self.user_input:
-                        removed = self.user_input.pop()
-                        print(f"Removed chatbox {removed} from queue")
-                    return True
         return False
 
-    def draw(self, surface):
+    def draw(self, screen):
         if not self.chatboxes:
             return
         for chatbox in self.chatboxes:
-            chatbox.draw(surface)
+            chatbox.draw(screen)
         
-        self._draw_input_queue(surface)
+        self._draw_chatbox_order(screen)
+        self._draw_input_queue(screen)
+    
+    def _draw_chatbox_order(self, screen):
+        BLACK = (0, 0, 0)
+        
+        font = pygame.font.Font(None, 24)
+
+        # Nếu current_state là idle thì màu trắng, nếu được chọn thì màu xanh nhạt
+        for i in range(len(self.chatboxes)):
+            chatbox_num = [key for key, value in self.fixed_chatboxes.items() if value == self.chatboxes[i]]
+            chatbox_pos = self.chatboxes[i].current_pos
+            chatbox_alpha = self.chatboxes[i].alpha
+
+            WHITE = (255, 255, 255, chatbox_alpha)
+            BLUE = (143, 211, 255, chatbox_alpha)
+
+            order_surf = font.render(chatbox_num[0], True, BLACK) # 1 - 2 - 3
+            order_surf.set_alpha(chatbox_alpha)
+
+            order_bg_color = WHITE if self.order_nums[chatbox_num[0]]['current_state'] == self.CHATBOX_STATE[0] else BLUE
+            order_rect = order_surf.get_rect(center = (chatbox_pos[0], chatbox_pos[1] + 45))
+            bg_rect = order_rect.inflate(20, 10)
+
+            pygame.draw.rect(screen, order_bg_color, bg_rect, border_radius=5)  # background for the text
+            screen.blit(order_surf, order_rect)
+
+
     
     def _draw_input_queue(self, screen):
         '''Hiển thị các chatbox đã chọn'''

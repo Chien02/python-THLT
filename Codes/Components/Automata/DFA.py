@@ -36,8 +36,8 @@ class DFA(FA):
                 'tween_shake': None    # Tween cho shake
             }
     
-    def _calculate_positions(self):
-        super()._calculate_positions()
+    def _calculate_positions(self, screen_width=1024, screen_height=762):
+        super()._calculate_positions(screen_width=screen_width, screen_height=screen_height)
         #   Init animations SAU KHI states đã được tạo
         self._init_state_animations()
     

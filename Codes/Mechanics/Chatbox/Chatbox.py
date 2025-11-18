@@ -1,10 +1,12 @@
 import pygame
 from Codes.Utils.TweenAnimation import Tween, Easing, EasingMode
 
-FONT_SIZE = 24
+FONT_SIZE = 32
 
 class Chatbox:
-    def __init__(self, base_sprite, text, pos, lifetime=4.0):
+    def __init__(self, spawner, base_sprite, text, pos, lifetime=4.0):
+        from Codes.Mechanics.Chatbox.ChatboxSpawner import ChatboxSpawner
+        self.spawner : ChatboxSpawner = spawner
         # States
         self.base_sprite = base_sprite
         self.holding_sprite = None
@@ -19,26 +21,30 @@ class Chatbox:
         self.padding = 10
         self.text_color = "black"
         
-        # ✅ Timer và lifetime
+        #  Timer và lifetime
         self.timer = 0
         self.lifetime = lifetime
         self.fade_duration = 3.0
         
-        # ✅ Alpha/opacity
+        #  Alpha/opacity
         self.alpha = 255
+        self.last_alpha = 255
         
-        # ✅ Position tracking
+        #  Position tracking
         self.current_pos = pygame.Vector2(pos[0], pos[1])
         
-        # ✅ Move animation (Tween)
+        #  Move animation (Tween)
         self.is_moving = False
         self.move_tween_x = None
         self.move_tween_y = None
         self.move_duration = 800.0  # 0.8 giây - mượt và dứt khoát
         
-        # ✅ Flags
+        #  Flags
         self.is_alive = True
         self.pause_fade = False  # Dừng fade khi đang di chuyển
+
+        # Hàm callback gọi đến spawner khi chatbox ngủm
+        self._on_chatbox_die = None
 
     def set_base_sprite(self, image_path):
         """Set sprite mới"""
@@ -59,15 +65,15 @@ class Chatbox:
         if isinstance(target_pos, (list, tuple)):
             target_pos = pygame.Vector2(target_pos[0], target_pos[1])
         
-        # ✅ Đánh dấu đang di chuyển
+        #  Đánh dấu đang di chuyển
         self.is_moving = True
         self.pause_fade = True  # Dừng fade trong khi di chuyển
         
-        # ✅ Lấy vị trí hiện tại
+        #  Lấy vị trí hiện tại
         start_x = self.collision_rect.x
         start_y = self.collision_rect.y
         
-        # ✅ Tạo Tween cho X
+        #  Tạo Tween cho X
         self.move_tween_x = Tween(
             begin=start_x,
             end=target_pos.x,
@@ -77,7 +83,7 @@ class Chatbox:
         )
         self.move_tween_x.start()
         
-        # ✅ Tạo Tween cho Y
+        #  Tạo Tween cho Y
         self.move_tween_y = Tween(
             begin=start_y,
             end=target_pos.y,
@@ -99,7 +105,7 @@ class Chatbox:
     def update(self, delta_time):
         """Update timer, movement animation, và fade-out alpha"""
         
-        # ✅ Update movement tweens
+        #  Update movement tweens
         if self.is_moving:
             if self.move_tween_x and self.move_tween_y:
                 # Update tweens
@@ -112,32 +118,31 @@ class Chatbox:
                 self.current_pos.x = self.collision_rect.x
                 self.current_pos.y = self.collision_rect.y
                 
-                # ✅ Kiểm tra xem animation đã xong chưa
+                #  Kiểm tra xem animation đã xong chưa
                 if not self.move_tween_x.animating and not self.move_tween_y.animating:
                     self.is_moving = False
                     self.move_tween_x = None
                     self.move_tween_y = None
                     self.pause_fade = False  # Tiếp tục fade sau khi di chuyển xong
                     print("Chatbox reached destination")
-                    
-                    # ✅ Optional: Tự động die khi đến đích
-                    # self.die()
         
-        # ✅ Update timer
+        #  Update timer
         self.timer += delta_time
         
-        # ✅ Calculate alpha (chỉ khi KHÔNG đang di chuyển)
+        #  Calculate alpha (chỉ khi KHÔNG đang di chuyển)
         if not self.pause_fade:
             time_remaining = self.lifetime - self.timer
             if time_remaining <= self.fade_duration:
                 # Fade out phase
                 fade_progress = 1.0 - (time_remaining / self.fade_duration)
-                self.alpha = int(255 * (1.0 - fade_progress))
+                self.last_alpha = int(255 * (1.0 - fade_progress))
+                self.alpha = self.last_alpha
             else:
                 # Still visible
                 self.alpha = 255
         else:
-            # ✅ Giữ alpha ở mức hiện tại khi đang di chuyển
+            #  Giữ alpha ở mức hiện tại khi đang di chuyển
+            self.alpha = 255
             pass
 
     def draw(self, screen):
@@ -147,7 +152,7 @@ class Chatbox:
         sprite_with_alpha.set_alpha(self.alpha)
         screen.blit(sprite_with_alpha, self.collision_rect.topleft)
         
-        # ✅ Render text với word wrap
+        #  Render text với word wrap
         words = self.text.split(' ')
         lines = []
         current_line = ""
@@ -165,7 +170,7 @@ class Chatbox:
         if current_line:
             lines.append(current_line)
 
-        # ✅ Vẽ text với alpha
+        #  Vẽ text với alpha
         line_height = self.font.get_linesize()
         total_text_height = len(lines) * line_height + (len(lines) - 1) * 5
         y_start = self.collision_rect.y + (self.collision_rect.height - total_text_height) // 2
@@ -178,21 +183,13 @@ class Chatbox:
             text_x = self.collision_rect.x + (self.collision_rect.width - text_surface.get_width()) // 2
             screen.blit(text_with_alpha, (text_x, y_offset))
             y_offset += line_height + 5
-        
-        # # ✅ Optional: Vẽ debug info
-        # if self.is_moving:
-        #     self._draw_debug(screen)
-    
-    # def _draw_debug(self, screen):
-    #     """Vẽ thông tin debug khi đang di chuyển"""
-    #     font_debug = pygame.font.Font(None, 16)
-    #     debug_text = f"Moving... {self.move_tween_x.step*100:.0f}%"
-    #     debug_surf = font_debug.render(debug_text, True, (255, 0, 0))
-    #     screen.blit(debug_surf, (self.collision_rect.x, self.collision_rect.y - 20))
 
     def die(self):
         """Đánh dấu chatbox để xóa"""
         self.is_alive = False
+        if self._on_chatbox_die:
+            callback = self._on_chatbox_die
+            callback()
         return self.is_alive
     
     def is_dead(self):

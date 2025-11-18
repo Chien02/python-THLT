@@ -21,7 +21,7 @@ class Machine(Entity):
 
         # Add animations to sprite_frame
         self.sprite_frames.add_animation("idle", idle_sprites, frame_duration=0.1)
-        self.sprite_frames.add_animation("happy", happy_sprites, frame_duration=0.1)
+        self.sprite_frames.add_animation("happy", happy_sprites, frame_duration=0.05)
         self.sprite_frames.add_animation("cry", cry_sprites, frame_duration=0.1)
         self.sprite_frames.add_animation("confused", confused_sprites, frame_duration=0.1)
         self.sprite_frames.add_animation("dumb", dumb_sprites, frame_duration=0.1)
@@ -34,15 +34,37 @@ class Machine(Entity):
 
         # For collision detection
         # self.collide_flag = False
+        self._on_animation_complete = None
+        self._waiting_for_animaiton = False
     
     def update(self, dt):
         super().update(dt)
         # Machine update (visuals, tweens) done in super().update
 
-    def collide_with_chatboxes(self, chatboxes: list):
-        """Check collision against a list of chatbox objects.
+        if self._waiting_for_animaiton == False: return
+        if self._is_animation_finished():
+            self._waiting_for_animaiton = False
 
-        Returns the list of chatboxes collided with or None.
+            # chuyển về default animation
+            self.sprite_frames.play(self.sprite_frames.default_animation)
+
+            # Gọi callback được gán cho _on_animation_complete nếu có
+            if self._on_animation_complete:
+                callback = self._on_animation_complete
+                # self._on_animation_complete = None # Đảm bảo rằng nó ko tự gọi lại lần sau
+                callback()
+    
+    def _is_animation_finished(self):
+        """
+        Kiểm tra xem animation hiện tại đã chạy xong chưa
+        """
+        return self.sprite_frames.is_finished()
+    
+
+    def collide_with_chatboxes(self, chatboxes: list):
+        """
+            Check collision against a list of chatbox objects.
+            Returns the list of chatboxes collided with or None.
         """
         collided_chatboxes = []
         for cb in chatboxes:
@@ -50,6 +72,9 @@ class Machine(Entity):
                 if self.collision_rect.colliderect(cb.collision_rect):
                     # Play 'happy' animation on collision
                     self.sprite_frames.play("happy", loop=False)
+                    # Đợi animation xong mới thực hiện thêm scene khác lên top
+                    self._waiting_for_animaiton = True
+
                     cb.die()
                     collided_chatboxes.append(cb)
             except Exception:

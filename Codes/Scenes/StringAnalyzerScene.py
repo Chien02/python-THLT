@@ -72,6 +72,10 @@ class StringAnalyzerScene(Scene):
         # Nếu ngưng analyzing thì dừng lại và chuyển về màn hình chính
         if not self.analyzing:
             self.game.manager.pop()
+            
+            # Reset biến is_analyzing của main_scene
+            self.main_scene.is_analyzing = False
+
             # Sử dụng lazy import để tránh partially initialized module
             from Codes.Scenes.MainGameplayScene import MainGamePlayScene
             for i in range(0, len(self.game.manager.scenes)):
@@ -120,17 +124,18 @@ class StringAnalyzerScene(Scene):
     
     def _draw_progress(self, screen):
         """Hiển thị text đang ở đâu trong danh sách"""
-        font = pygame.font.Font(None, 28)
         ORANGE = (247, 150, 23)
         DARK_ORANGE = (110, 39, 39)
+        WHITE = (255, 255, 255)
+        font = pygame.font.Font(None, 28)
         
         # Progress text
         progress_text = f"Text {self.current_text_index + 1} / {len(self.texts)}"
-        text_surf = font.render(progress_text, True, (255, 255, 255))
+        text_surf = font.render(progress_text, True, WHITE)
         
-        # Vị trí: Góc trên bên trái
+        # Vị trí: Trung tâm phía dưới đồ thị
         horizontal_center = self.game.base_size[0] // 2
-        below_combo_pos = 400
+        below_combo_pos = (self.game.base_size[1] // 2) + 120
         text_rect = text_surf.get_rect(center=(horizontal_center, below_combo_pos))
         
         # Background

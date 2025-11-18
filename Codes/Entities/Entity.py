@@ -35,7 +35,7 @@ class Entity:
         self.tween = Tween(
             begin=self.scale,
             end=STRETCH_SCALE,  # phình ra hơn bình thường
-            duration=500, # milliseconds
+            duration=250, # milliseconds
             easing=Easing.ELASTIC,
             easing_mode=EasingMode.OUT
         )

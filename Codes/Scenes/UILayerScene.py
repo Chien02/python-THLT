@@ -8,8 +8,11 @@ from Codes.Components.Buttons import *
 class UILayerScene(Scene):
     def __init__(self, game):
         super().__init__(game)
-        self.pause_button = ButtonWithImage(680, 20, "Assets/Images/UIs/Buttons/pauseButton.png")
+        pause_btn_pos_x = self.game.base_size[0] - 100
+        pause_btn_pos_y = 30
+        self.pause_button = ButtonWithImage(pause_btn_pos_x, pause_btn_pos_y, "Assets/Images/UIs/Buttons/pauseButton.png")
         
+        #region Banned List Sprites
         # Banned list sprite
         self.banned_list_sprite = pygame.image.load("Assets/Images/Elements/Banned_list/banned_list_rect.png").convert_alpha()
         self.banned_list_decor_sprite = pygame.image.load("Assets/Images/Elements/Banned_list/banned_list_decor.png").convert_alpha()
@@ -23,6 +26,8 @@ class UILayerScene(Scene):
         move_to_topleft_dist = 70
         self.decor_pos = (self.banned_list_pos[0] - move_to_topleft_dist, self.banned_list_pos[1] - move_to_topleft_dist)
         
+        #endregion
+
         #  Lấy reference đến main scene
         self.main_scene = None
         self._find_main_scene()
@@ -88,7 +93,7 @@ class UILayerScene(Scene):
         #  Vẽ các ký tự bị banned
         if self.banned_list:
             self._draw_banned_characters(screen)
-        
+
         #  Vẽ pause button
         self.pause_button.draw(screen)
     
@@ -199,3 +204,8 @@ class UILayerScene(Scene):
             y=self.banned_list_pos[1] + 15
         )
         screen.blit(title_surf, title_rect)
+    
+    def _draw_score_display(self, screen):
+        """Hiển thị score và high score"""
+        screen.blit(self.score_display_sprite, self.current_score_pos)
+        
