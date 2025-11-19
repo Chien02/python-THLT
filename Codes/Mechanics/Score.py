@@ -366,6 +366,38 @@ class Score:
             surface.blit(popup_sprite, popup_sprite_rect)
             surface.blit(popup_surf, popup_rect)
     
+    def draw_only_score(self, screen, x, y):
+        font_large = pygame.font.Font(None, 48)
+        font_small = pygame.font.Font(None, 24)
+        
+        # Current
+        padding = 20
+        score_text = f"{self.current_score}"
+        score_surf = font_large.render(score_text, True, self.WHITE)
+        score_sprite_rect = self.current_score_sprite.get_rect(topleft = (x, y))
+        score_text_rect = score_surf.get_rect()
+        score_text_rect.midright = (score_sprite_rect.midright[0] - padding, score_sprite_rect.midright[1])
+        
+        screen.blit(self.current_score_sprite, score_sprite_rect)
+        screen.blit(score_surf, score_text_rect)
+        
+        # High score
+        high_score_pos = (x, y + 75) # Thấp hơn current_score
+        high_score_sprite_rect = self.high_score_sprite.get_rect(topleft = high_score_pos)
+        high_score_text = f"{self.high_score}"
+        high_score_surf = font_small.render(high_score_text, True, self.YELLOW)
+        high_score_text_rect = high_score_surf.get_rect()
+        high_score_text_rect.midright = (high_score_sprite_rect.midright[0] - padding, high_score_sprite_rect.centery)
+        best_text = "BEST:"
+        best_text_surf = font_small.render(best_text, True, self.YELLOW)
+        best_text_rect = best_text_surf.get_rect(midleft = (x + padding, 
+                                                            high_score_sprite_rect.centery))
+
+        screen.blit(self.high_score_sprite, high_score_sprite_rect)
+        screen.blit(best_text_surf, best_text_rect)
+        screen.blit(high_score_surf, high_score_text_rect)
+        pass
+
     def draw_summary(self, surface, screen_width, screen_height):
         """
         Vẽ bảng tổng kết khi kết thúc game
@@ -448,65 +480,3 @@ class Score:
                 f"High: {self.high_score} | "
                 f"Combo: x{self.combo} | "
                 f"Accuracy: {self.get_accuracy():.1f}%")
-
-
-# ===== DEMO =====
-# if __name__ == "__main__":
-#     pygame.init()
-#     screen = pygame.display.set_mode((800, 600))
-#     pygame.display.set_caption("Score System Demo")
-#     clock = pygame.time.Clock()
-    
-#     # Tạo score manager
-#     score = Score(correct_points=10, wrong_points=-5)
-    
-#     running = True
-#     while running:
-#         dt = clock.tick(60) / 1000.0
-        
-#         for event in pygame.event.get():
-#             if event.type == pygame.QUIT:
-#                 running = False
-#             elif event.type == pygame.KEYDOWN:
-#                 if event.key == pygame.K_SPACE:
-#                     # Test: Cộng điểm
-#                     points = score.add_correct()
-#                     print(f"Correct! +{points} points")
-#                     print(score)
-#                 elif event.key == pygame.K_x:
-#                     # Test: Trừ điểm
-#                     points = score.add_wrong()
-#                     print(f"Wrong! {points} points")
-#                     print(score)
-#                 elif event.key == pygame.K_r:
-#                     # Reset
-#                     score.reset()
-#                     print("Score reset!")
-#                 elif event.key == pygame.K_s:
-#                     # Show summary
-#                     print("\n=== STATS ===")
-#                     for key, value in score.get_stats().items():
-#                         print(f"{key}: {value}")
-        
-#         # Update
-#         score.update(dt)
-        
-#         # Draw
-#         screen.fill((20, 20, 40))
-#         score.draw(screen, 20, 20)
-        
-#         # Instructions
-#         font = pygame.font.Font(None, 24)
-#         instructions = [
-#             "SPACE: Add correct (+10)",
-#             "X: Add wrong (-5)",
-#             "R: Reset score",
-#             "S: Show stats"
-#         ]
-#         for i, inst in enumerate(instructions):
-#             text_surf = font.render(inst, True, (200, 200, 200))
-#             screen.blit(text_surf, (20, 400 + i * 30))
-        
-#         pygame.display.flip()
-    
-#     pygame.quit()

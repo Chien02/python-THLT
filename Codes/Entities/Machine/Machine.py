@@ -3,6 +3,7 @@ from Codes.Utils.TweenAnimation import TweenAnimation
 from Codes.Entities.Entity import Entity
 from Codes.Utils.FrameLoader import FrameLoader
 from Codes.Utils.SpriteFrame import SpriteFrames
+from Codes.Mechanics.Health.Health import Health
 
 class Machine(Entity):
     def __init__(self, pos):
@@ -31,23 +32,33 @@ class Machine(Entity):
         # Default animation
         self.sprite_frames.set_default_animation("idle")
         self.sprite_frames.play("idle")
+        self.current_state = self.sprite_frames.get_current_animation()
 
         # For collision detection
         # self.collide_flag = False
         self._on_animation_complete = None
         self._waiting_for_animaiton = False
+
+        # Health
+        health_offset_y = 100
+        health_pos = (self.pos[0], self.pos[1] - health_offset_y)
+        self.health = Health(20, health_pos) # --> Need to set its callback when machine died
     
     def update(self, dt):
         super().update(dt)
         # Machine update (visuals, tweens) done in super().update
+
+        # Health animation update
+        self.health.update(dt)
 
         if self._waiting_for_animaiton == False: return
         if self._is_animation_finished():
             self._waiting_for_animaiton = False
 
             # chuyển về default animation
-            self.sprite_frames.play(self.sprite_frames.default_animation)
-
+            if self.health.is_alive():
+                self.sprite_frames.play(self.sprite_frames.default_animation)
+            
             # Gọi callback được gán cho _on_animation_complete nếu có
             if self._on_animation_complete:
                 callback = self._on_animation_complete
@@ -70,11 +81,6 @@ class Machine(Entity):
         for cb in chatboxes:
             try:
                 if self.collision_rect.colliderect(cb.collision_rect):
-                    # Play 'happy' animation on collision
-                    self.sprite_frames.play("happy", loop=False)
-                    # Đợi animation xong mới thực hiện thêm scene khác lên top
-                    self._waiting_for_animaiton = True
-
                     cb.die()
                     collided_chatboxes.append(cb)
             except Exception:
@@ -89,4 +95,7 @@ class Machine(Entity):
     
     def draw(self, screen):
         super().draw(screen)
+        
+        # Health
+        self.health.draw(screen)
 

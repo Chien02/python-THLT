@@ -62,6 +62,9 @@ class SpriteFrames:
             return None
         return self.animations[self.current_anim]["frames"][self.current_frame]
 
+    def get_current_animation(self):
+        return self.current_anim
+
     def is_finished(self):
         """ Kiểm tra animation đã xong chưa"""
         return self.animation_finished

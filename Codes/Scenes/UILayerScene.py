@@ -3,14 +3,24 @@ import pygame
 from Codes.Scenes.SceneBase import Scene
 from Codes.Scenes.PauseMenuScene import PauseMenuScene
 from Codes.Mechanics.WordGenerator.BannedListGenerator import BannedListGenerator
+from Codes.Utils.FrameLoader import FrameLoader
 from Codes.Components.Buttons import *
 
 class UILayerScene(Scene):
     def __init__(self, game):
         super().__init__(game)
-        pause_btn_pos_x = self.game.base_size[0] - 100
-        pause_btn_pos_y = 30
-        self.pause_button = ButtonWithImage(pause_btn_pos_x, pause_btn_pos_y, "Assets/Images/UIs/Buttons/pauseButton.png")
+
+        # Pause button
+        small_btn_size = (48, 48)
+        offset_x = small_btn_size[0] + (small_btn_size[0]//4)
+        offset_y = 50
+        pause_btn_pos_x = self.game.base_size[0] - offset_x
+        pause_btn_pos_y = 50
+
+        # self.pause_button = ButtonWithImage(pause_btn_pos_x, pause_btn_pos_y, "Assets/Images/UIs/Buttons/pauseButton.png")
+        sprites = FrameLoader.load_frames_from_sheet("Assets/Images/UIs/Buttons/pause_small.png", small_btn_size[0], small_btn_size[1], 3)
+        self.pause_button = ButtonWithSprites(pause_btn_pos_x, pause_btn_pos_y, sprites=sprites)
+        self.pause_button._on_pressed = self._on_pause_button_pressed
         
         #region Banned List Sprites
         # Banned list sprite
@@ -29,8 +39,7 @@ class UILayerScene(Scene):
         #endregion
 
         #  Lấy reference đến main scene
-        self.main_scene = None
-        self._find_main_scene()
+        self.main_scene = self.game.main_scene
         
         #  Banned list data
         self.banned_list = []
@@ -45,14 +54,6 @@ class UILayerScene(Scene):
         # Bảng con --> Nội dung được vẽ bên trong bảng con
         self.sub_banned_rect = pygame.Rect(self.banned_list_pos, 
                                            (self.banned_list_rect.width - self.margin, self.banned_list_rect.height - self.margin))
-        
-    def _find_main_scene(self):
-        """Tìm MainGamePlayScene trong scene stack"""
-        from Codes.Scenes.MainGameplayScene import MainGamePlayScene
-        for scene in self.game.manager.scenes:
-            if isinstance(scene, MainGamePlayScene):
-                self.main_scene = scene
-                return
             
     def update(self, dt):
         #  Tìm main scene nếu chưa có
@@ -72,15 +73,18 @@ class UILayerScene(Scene):
 
     def handle_events(self, events):
         for event in events:
-            if self.pause_button.is_clicked(event):
-                # Thêm pause menu scene
-                if not isinstance(self.game.manager.top(), PauseMenuScene):
-                    self.game.manager.push(PauseMenuScene(self.game))
-                    # Tạm dừng main scene
-                    if self.main_scene:
-                        self.main_scene.paused = True
-                    return True
+            if self.pause_button.handle_events([event]):
+                return True
         return False
+
+    def _on_pause_button_pressed(self):
+        # Thêm pause menu scene
+        if not isinstance(self.game.manager.top(), PauseMenuScene):
+            self.game.manager.push(PauseMenuScene(self.game))
+            # Tạm dừng main scene
+            if self.main_scene:
+                self.main_scene.paused = True
+        return True
 
     def draw(self, screen):
         """Vẽ UI layer"""
@@ -204,8 +208,4 @@ class UILayerScene(Scene):
             y=self.banned_list_pos[1] + 15
         )
         screen.blit(title_surf, title_rect)
-    
-    def _draw_score_display(self, screen):
-        """Hiển thị score và high score"""
-        screen.blit(self.score_display_sprite, self.current_score_pos)
         

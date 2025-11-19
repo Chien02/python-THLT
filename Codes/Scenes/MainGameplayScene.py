@@ -3,6 +3,7 @@ import pygame
 from Codes.Scenes.PauseMenuScene import PauseMenuScene
 from Codes.Scenes.SceneBase import Scene
 from Codes.Scenes.UILayerScene import UILayerScene
+from Codes.Scenes.GameOverScene import GameOverScene
 from Codes.Scenes.StringAnalyzerScene import StringAnalyzerScene
 from Codes.Mechanics.Chatbox.ChatboxSpawner import ChatboxSpawner
 from Codes.Mechanics.WordGenerator.BannedListGenerator import BannedListGenerator
@@ -25,7 +26,7 @@ class MainGamePlayScene(Scene):
         self._bg_scaled_size = None
 
         # Machine Animation
-        machine_pos = (320, 220)
+        machine_pos = (360, 240)
         self.machine = Machine(machine_pos)
 
         # Chatbox Spawner
@@ -41,11 +42,7 @@ class MainGamePlayScene(Scene):
         self.banned_list = self.banned_generator.generate(self.num_of_banned)
 
         # Khởi tạo Score Manager
-        self.score = Score(
-            correct_points=10,      # +10 điểm khi đúng
-            wrong_points=-10,        # -5 điểm khi sai
-            combo_multiplier=1.5    # Nhân 1.5x khi combo >= 5
-        )
+        self.score : Score = self.game.score
 
         # Các collided chatboxes được ghi lại, do phải đợi animation thực hiện xong
         self.pending_collisions = None
@@ -66,7 +63,8 @@ class MainGamePlayScene(Scene):
         return False
 
     def update(self, dt):
-        self.score.update(dt)
+        if self.score:
+            self.score.update(dt)
         
         self.machine.update(dt)
         self.chatbox_spawner.update(dt)
@@ -74,19 +72,40 @@ class MainGamePlayScene(Scene):
         collided = self.machine.collide_with_chatboxes(self.chatbox_spawner.chatboxes)
         
         if collided:
+            # Flag này dùng để kiểm tra xem nên chơi anim cry or happy -- Cập nhật bằng state machine sau
+            is_happy = True
+
             self.machine.stretch()
             # Check for banned characters
             total_wrong_attemp = 0
             for coll in collided[:]:
                 if self.banned_generator.is_in_banned_list(coll.text):
                     total_wrong_attemp += 1
-                    print(f"Wrong: {coll.text}")
+                    dmg = 20
+                    self.machine.health.take_damage(dmg)
                     collided.remove(coll)
-             # Stop the thing and subtract the scores
+                    is_happy = False
+
+            # Kiểm tra trước xem có dead chưa, dead trước khi analyze
+            if not self.machine.health.is_alive():
+                self.machine.sprite_frames.play('over', loop=False)
+                self.machine._waiting_for_animaiton = True
+                self.machine._on_animation_complete = self._on_machine_die
+                return
+
+            # Thực hiện animation tùy thuộc vào flag is_happy
+            if is_happy:
+                self.machine.sprite_frames.play('happy', loop=False)
+                self.machine._waiting_for_animaiton = True
+            else:
+                self.machine.sprite_frames.play('cry', loop=False)
+                self.machine._waiting_for_animaiton = True
+            
+            # Stop the thing and subtract the scores
             if total_wrong_attemp > 0:
                 # For FX: Shake the screen
                 self.score.add_wrong(attemp=total_wrong_attemp)
-        
+            
         # One more check after remove the chatboxes that have banned characters
         if collided and self.is_analyzing == False:
             self.pending_collisions = collided
@@ -96,7 +115,6 @@ class MainGamePlayScene(Scene):
 
 
     def _on_machine_animation_complete(self):
-
         if self.pending_collisions and not isinstance(self.game.manager.top(), StringAnalyzerScene):
             self.is_analyzing = True
             self.game.manager.push(StringAnalyzerScene(self.game,self, self.pending_collisions, self.analyzing_background))
@@ -112,6 +130,12 @@ class MainGamePlayScene(Scene):
             for i in range(0, len(self.game.manager.scenes)):
                 if isinstance(self.game.manager.scenes[i] , MainGamePlayScene):
                     self.game.manager.scenes[i].paused = True
+    
+    def _on_machine_die(self):
+        if not isinstance(self.game.manager.top(), GameOverScene):
+            self.game.manager.push(GameOverScene(self.game))
+            # Tạm dừng main scene
+            self.paused = True
 
 
     def draw(self, screen):

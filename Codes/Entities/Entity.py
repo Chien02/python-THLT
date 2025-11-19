@@ -13,7 +13,7 @@ RESET_SCALE = 1.0
 class Entity:
     def __init__(self, pos: tuple[int, int], collision_rect_size: tuple[int, int]=SPRITE_SIZE):
         self.pos = pos
-        self.collision_rect = pygame.Rect(pos[0], pos[1], collision_rect_size[0], collision_rect_size[1])  # Use provided size
+        self.collision_rect = None  # Use provided size
         self.sprite_frames = SpriteFrames()
         self.tween = None  # Placeholder for tween animation
         self.scale = 1.0  # Initial scale for drawing
@@ -79,6 +79,7 @@ class Entity:
     
     def draw(self, screen):
         current_frame = self.sprite_frames.get_current_frame()
+        self.collision_rect = current_frame.get_rect(center=self.pos)
         if current_frame is None:
             return
 

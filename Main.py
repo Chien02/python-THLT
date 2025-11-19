@@ -7,6 +7,7 @@ from Codes.Utils.SceneManager import SceneManager
 from Codes.Scenes.MainGameplayScene import MainGamePlayScene
 from Codes.Scenes.PauseMenuScene import PauseMenuScene
 from Codes.Scenes.UILayerScene import UILayerScene
+from Codes.Mechanics.Score import Score
 
 class Game:
 # ---- Variables ------
@@ -26,9 +27,13 @@ class Game:
 
         # scene manager
         self.manager = SceneManager(self)
+        self.main_scene = None
 
         # a render target at the base logical resolution; scenes draw here
         self.render_surface = pygame.Surface(self.base_size)
+
+        # score manager
+        self.score : Score = None
 
         # INIT PYGAME
         pygame.init()
@@ -37,13 +42,20 @@ class Game:
         pygame.display.set_caption(f"{self.game_title}")
 
     def run(self):
+        # Khởi tạo Score Manager
+        self.score = Score(
+            correct_points=10,      # +10 điểm khi đúng
+            wrong_points=-10,        # -5 điểm khi sai
+            combo_multiplier=1.5    # Nhân 1.5x khi combo >= 5
+        )
         # Init scenes
-        main_gameplay_scene = MainGamePlayScene(self)
+        self.main_scene = MainGamePlayScene(self)
         ui_gameplay_scene = UILayerScene(self)
 
         # Add all the scenes to manager
-        self.manager.push(main_gameplay_scene)
+        self.manager.push(self.main_scene)
         self.manager.push(ui_gameplay_scene)
+
 
         # ----- Game Loop ------
         while self.running:
@@ -101,6 +113,20 @@ class Game:
         
         pygame.quit()
         sys.exit()
+    
+    def _on_reload_main_scene(self):
+        # Reload score
+        self.score = Score(
+            correct_points=10,      # +10 điểm khi đúng
+            wrong_points=-10,        # -5 điểm khi sai
+            combo_multiplier=1.5    # Nhân 1.5x khi combo >= 5
+        )
+        new_scene = MainGamePlayScene(self)
+        self.main_scene = new_scene
+        new_ui_scene = UILayerScene(self)
+        self.manager.replace_at(0, new_scene)
+        self.manager.replace_at(1, new_ui_scene)
+
 
 if __name__ == "__main__":
     # Wrap execution so we print a full traceback to the console

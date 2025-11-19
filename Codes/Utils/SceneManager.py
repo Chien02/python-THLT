@@ -12,11 +12,18 @@ class SceneManager:
             s = self.scenes.pop()
             s.on_exit()
     
-    def replace(self, scene):
-        # clear all
-        while self.scenes:
-            self.pop()
-        self.push(scene)
+    def replace(self, old_scene, new_scene):
+        for scene in self.scenes:
+            if scene == old_scene:
+                scene = new_scene
+                return
+    
+    def replace_at(self, index, scene):
+        if 0 <= index < len(self.scenes):
+            old = self.scenes[index]
+            old.on_exit()
+            self.scenes[index] = scene
+            scene.on_enter()
 
     def top(self):
         return self.scenes[-1] if self.scenes else None
