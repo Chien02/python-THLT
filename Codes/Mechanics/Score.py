@@ -107,7 +107,7 @@ class Score:
         total_points = base_points + combo_bonus
         self.current_score += total_points
         
-        # Cập nhật high score
+        # Cập nhật high score - Sự kiện cập nhật highscore
         if self.current_score > self.high_score:
             self.high_score = self.current_score
             self._save_high_score()
@@ -398,7 +398,9 @@ class Score:
         screen.blit(high_score_surf, high_score_text_rect)
         pass
 
-    def draw_summary(self, surface, screen_width, screen_height):
+    BRIGHT_GREY = (155, 171, 178)
+    DARK = (46, 34, 47)
+    def draw_summary(self, surface, screen_size, pos=(680, 390)):
         """
         Vẽ bảng tổng kết khi kết thúc game
         
@@ -409,31 +411,32 @@ class Score:
         font_title = pygame.font.Font(None, 64)
         font_text = pygame.font.Font(None, 36)
         
-        # Background overlay
-        overlay = pygame.Surface((screen_width, screen_height))
-        overlay.set_alpha(200)
-        overlay.fill((0, 0, 0))
-        surface.blit(overlay, (0, 0))
-        
         # Panel
-        panel_width = 500
-        panel_height = 400
-        panel_x = (screen_width - panel_width) // 2
-        panel_y = (screen_height - panel_height) // 2
+        center = (screen_size[0] // 2, screen_size[1] // 2)
+        panel_alpha = 220
+        panel_width = 310
+        panel_height = 240
+        if pos:
+            panel_x, panel_y = pos
+        else:
+            panel_x = (center[0] + panel_width) 
+            panel_y = (center[1] - panel_height)
         
+        r, g, b = self.DARK
+        panel_color = (r, g, b, panel_alpha)
+
         panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
-        pygame.draw.rect(surface, (30, 30, 50), panel_rect)
-        pygame.draw.rect(surface, (255, 215, 0), panel_rect, 4)
+        panel_rect.center = (panel_x, panel_y)
         
-        # Title
-        title_text = "GAME OVER"
-        title_surf = font_title.render(title_text, True, (255, 215, 0))
-        title_rect = title_surf.get_rect(centerx=screen_width // 2, y=panel_y + 30)
-        surface.blit(title_surf, title_rect)
+        # pygame.draw.rect(surface, panel_color, panel_rect)
+        pygame.draw.rect(surface, self.BRIGHT_GREY, panel_rect, 4)
         
         # Stats
-        y_offset = panel_y + 120
-        spacing = 50
+        spacing = 40
+        padding = 50
+        small_padding = padding // 2
+        stat_pos_x = panel_rect.left + padding
+        stat_pos_y = panel_rect.top + small_padding
         
         stats = [
             f"Final Score: {self.current_score}",
@@ -446,14 +449,8 @@ class Score:
         for i, stat in enumerate(stats):
             color = (255, 215, 0) if i == 0 else (255, 255, 255)
             stat_surf = font_text.render(stat, True, color)
-            stat_rect = stat_surf.get_rect(centerx=screen_width // 2, y=y_offset + i * spacing)
+            stat_rect = stat_surf.get_rect(x=stat_pos_x, y=stat_pos_y + i * spacing)
             surface.blit(stat_surf, stat_rect)
-        
-        # Hint
-        hint_text = "Press ENTER to continue"
-        hint_surf = pygame.font.Font(None, 24).render(hint_text, True, (150, 150, 150))
-        hint_rect = hint_surf.get_rect(centerx=screen_width // 2, y=panel_y + panel_height - 40)
-        surface.blit(hint_surf, hint_rect)
     
     def get_stats(self):
         """

@@ -17,10 +17,10 @@ class GameOverScene(Scene):
         # Buttons
         center = ((self.game.base_size[0] // 2), (self.game.base_size[1] // 2))
         button_size = (144, 48)
-        buttons_pos_x = center[0] - 100
-        buttons_pos_y = center[1] + (button_size[1]*2)
+        buttons_pos_x = center[0] - 120
+        buttons_pos_y = center[1] + (button_size[1]*3)
         offset_y = 85
-        offset_x = button_size[0] + button_size[0] // 2
+        offset_x = button_size[0] + (button_size[0] // 3)
         replay_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/UIs/Buttons/replay.png", button_size[0], button_size[1], 3)
         home_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/UIs/Buttons/home.png", button_size[0], button_size[1], 3)
         self.replay_button = ButtonWithSprites(buttons_pos_x, buttons_pos_y + offset_y, replay_sprites)
@@ -60,13 +60,21 @@ class GameOverScene(Scene):
         self.machine.update(dt)
         self.machine.health.current_health = self.game.main_scene.machine.health.current_health
 
+    # Color
+    RED = (174, 35, 52)
+    YELLOW = (255, 215, 0)
     def draw(self, screen):
         # overlay mờ
-        alpha = 220
-        offset_y = 175
-        self.alpha_surface.fill((0, 0, 0, alpha))  # alpha 210/255
-        screen.blit(self.alpha_surface, (0, 0))
-        text = self.font.render("GAME OVER", True, (255, 255, 255))
+        # Background overlay
+        screen_size = self.game.base_size
+        overlay = pygame.Surface((screen_size[0], screen_size[1]))
+        overlay.set_alpha(235)
+        overlay.fill((0, 0, 0))
+        screen.blit(overlay, (0, 0))
+
+        # Title
+        offset_y = 200
+        text = self.font.render("GAME OVER", True, self.YELLOW)
         rect = text.get_rect(center=(self.game.WINDOW_WIDTH//2, self.game.WINDOW_HEIGHT//2 - offset_y))
         screen.blit(text, rect)
 
@@ -78,4 +86,5 @@ class GameOverScene(Scene):
 
         # Draw summary
         summary_rect = pygame.rect.Rect(560, 300, 330, 350)
-        self.game.score.draw_summary(screen, summary_rect.width, summary_rect.height)
+        # summary_panel_pos = (680, 390)
+        self.game.score.draw_summary(screen, self.game.base_size)
