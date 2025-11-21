@@ -7,8 +7,8 @@ from Codes.Utils.FrameLoader import FrameLoader
 from Codes.Components.Buttons import *
 
 class UILayerScene(Scene):
-    def __init__(self, game):
-        super().__init__(game)
+    def __init__(self, game, name='ui'):
+        super().__init__(game, name)
 
         # Pause button
         small_btn_size = (48, 48)

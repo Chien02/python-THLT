@@ -12,11 +12,19 @@ class SceneManager:
             s = self.scenes.pop()
             s.on_exit()
     
-    def replace(self, old_scene, new_scene):
-        for scene in self.scenes:
-            if scene == old_scene:
-                scene = new_scene
-                return
+    def replace(self, old_scene_name, new_scene):
+        """
+            Thay thế scene, nếu scene không tồn tại thì thêm nó vào
+        """
+        find_scene_flag = False
+        for i in range(len(self.scenes)):
+            if self.scenes[i].name == old_scene_name:
+                find_scene_flag = True
+                self.scenes[i] = new_scene
+        
+        if not find_scene_flag:
+            self.push(new_scene)
+                
     
     def replace_at(self, index, scene):
         if 0 <= index < len(self.scenes):
@@ -27,6 +35,18 @@ class SceneManager:
 
     def top(self):
         return self.scenes[-1] if self.scenes else None
+
+    def back_to_scene(self, scene_name):
+        # Đếm số lần cần phải pop để đến được scene đó
+        count = 0
+        for i in range(len(self.scenes)-1, -1, -1): # Do dùng stack nên đếm ngược
+            count += 1
+            if self.scenes[i].name == scene_name:
+                break
+        
+        for i in range(0, count-1):
+            self.pop()
+
 
     def handle_events(self, events):
         # truyền events từ top -> bottom; nếu scene trả True (đã xử lý/nhận được input của nó) thì dừng, ko truyền xuống nữa.

@@ -8,8 +8,8 @@ from Codes.Entities.Machine.Machine import Machine
 from Codes.Mechanics.Score import Score
 
 class PauseMenuScene(Scene):
-    def __init__(self, game):
-        super().__init__(game)
+    def __init__(self, game, name='pause'):
+        super().__init__(game, name)
         # surface alpha để làm overlay mờ
         self.alpha_surface = pygame.Surface((self.game.WINDOW_WIDTH, self.game.WINDOW_HEIGHT), pygame.SRCALPHA)
         self.font = pygame.font.Font(None, 72)
@@ -28,6 +28,7 @@ class PauseMenuScene(Scene):
 
         # For managing buttons
         self.resume_button._on_pressed = self._on_resume_button_pressed
+        self.home_button._on_pressed = self._on_home_button_pressed
         self.buttons = [self.resume_button, self.setting_button, self.home_button]
 
         # Machine's Animation
@@ -59,6 +60,9 @@ class PauseMenuScene(Scene):
 
     def _on_resume_button_pressed(self):
         self.resume_main_scene()
+    
+    def _on_home_button_pressed(self):
+        self.game.manager.back_to_scene('main_menu')
 
     def update(self, dt):
         self.machine.update(dt)
@@ -66,7 +70,7 @@ class PauseMenuScene(Scene):
 
     def draw(self, screen):
         # overlay mờ
-        alpha = 210
+        alpha = 230
         offset_y = 175
         self.alpha_surface.fill((0, 0, 0, alpha))  # alpha 210/255
         screen.blit(self.alpha_surface, (0, 0))

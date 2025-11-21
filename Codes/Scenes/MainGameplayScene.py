@@ -12,8 +12,8 @@ from Codes.Entities.Machine.Machine import Machine
 
 
 class MainGamePlayScene(Scene):
-    def __init__(self, game):
-        super().__init__(game)
+    def __init__(self, game, name='main_game'):
+        super().__init__(game, name)
 
         # Lưu kích thước màn hình (lấy từ game)
         # Lưu kích thước màn hình logic (base size defined by Game)
@@ -56,7 +56,7 @@ class MainGamePlayScene(Scene):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     if not isinstance(self.game.manager.top(), PauseMenuScene):
-                        self.game.manager.push(PauseMenuScene(self.game))
+                        self.game.manager.push(PauseMenuScene(self.game, 'pause'))
                         # Tạm dừng main scene
                         self.paused = True
                         return True
@@ -133,7 +133,7 @@ class MainGamePlayScene(Scene):
     
     def _on_machine_die(self):
         if not isinstance(self.game.manager.top(), GameOverScene):
-            self.game.manager.push(GameOverScene(self.game))
+            self.game.manager.push(GameOverScene(self.game, 'game_over'))
             # Tạm dừng main scene
             self.paused = True
 

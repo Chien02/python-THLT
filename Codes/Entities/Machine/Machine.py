@@ -42,7 +42,7 @@ class Machine(Entity):
         # Health
         health_offset_y = 100
         health_pos = (self.pos[0], self.pos[1] - health_offset_y)
-        self.health = Health(20, health_pos) # --> Need to set its callback when machine died
+        self.health = Health(100, health_pos) # --> Need to set its callback when machine died
     
     def update(self, dt):
         super().update(dt)

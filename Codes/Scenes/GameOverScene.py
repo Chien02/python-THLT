@@ -8,8 +8,8 @@ from Codes.Entities.Machine.Machine import Machine
 from Codes.Mechanics.Score import Score
 
 class GameOverScene(Scene):
-    def __init__(self, game):
-        super().__init__(game)
+    def __init__(self, game, name='over'):
+        super().__init__(game, name)
         # surface alpha để làm overlay mờ
         self.alpha_surface = pygame.Surface((self.game.WINDOW_WIDTH, self.game.WINDOW_HEIGHT), pygame.SRCALPHA)
         self.font = pygame.font.Font(None, 72)
@@ -28,6 +28,7 @@ class GameOverScene(Scene):
 
         # For managing buttons
         self.replay_button._on_pressed = self._on_replay_button_pressed
+        self.home_button._on_pressed = self._on_home_button_pressed
         self.buttons = [self.replay_button, self.home_button]
 
         # Machine's Animation
@@ -41,20 +42,14 @@ class GameOverScene(Scene):
         for event in events:
             for button in self.buttons:
                 if button.handle_events([event]): return True
-            
-            # For event player click on the machine
-            if self.machine.handle_events([event]): return True
-            
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    self.resume_main_scene()
-
         return True  # thường menu chắn hết input, nên trả True
 
     def _on_replay_button_pressed(self):
         self.game.manager.pop()
         self.game._on_reload_main_scene()
-
+    
+    def _on_home_button_pressed(self):
+        self.game.manager.back_to_scene('man_menu')
 
     def update(self, dt):
         self.machine.update(dt)

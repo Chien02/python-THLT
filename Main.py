@@ -4,6 +4,7 @@ import json
 
 # from pygame.locals import * # Import game's modules
 from Codes.Utils.SceneManager import SceneManager
+from Codes.Scenes.MainMenu import MainMenuScene
 from Codes.Scenes.MainGameplayScene import MainGamePlayScene
 from Codes.Scenes.PauseMenuScene import PauseMenuScene
 from Codes.Scenes.UILayerScene import UILayerScene
@@ -49,13 +50,11 @@ class Game:
             combo_multiplier=1.5    # Nhân 1.5x khi combo >= 5
         )
         # Init scenes
-        self.main_scene = MainGamePlayScene(self)
-        ui_gameplay_scene = UILayerScene(self)
+        self.main_menu_scene = MainMenuScene(self, 'main_menu')
+        self.main_scene = None
 
         # Add all the scenes to manager
-        self.manager.push(self.main_scene)
-        self.manager.push(ui_gameplay_scene)
-
+        self.manager.push(self.main_menu_scene)
 
         # ----- Game Loop ------
         while self.running:
@@ -124,8 +123,9 @@ class Game:
         new_scene = MainGamePlayScene(self)
         self.main_scene = new_scene
         new_ui_scene = UILayerScene(self)
-        self.manager.replace_at(0, new_scene)
-        self.manager.replace_at(1, new_ui_scene)
+        
+        self.manager.replace(new_scene.name, new_scene)
+        self.manager.replace(new_ui_scene.name, new_ui_scene)
 
 
 if __name__ == "__main__":
