@@ -43,7 +43,7 @@ class StringAnalyzerScene(Scene):
 
         # Init_DFA based on text
         self.dfa : DFA = DFA(self, self.current_text)
-        self.dfa.init()
+        self.dfa.init(self.game.base_size[0], self.game.base_size[1])
 
         # Dừng lại khi xử lý hết chatbox được truyền vào:
         if self.current_text_index != len(self.texts):
@@ -195,7 +195,7 @@ class StringAnalyzerScene(Scene):
         
         #  TẠO MỚI DFA với text mới (KHÔNG dùng reset)
         self.dfa = DFA(self, self.current_text)
-        self.dfa.init()
+        self.dfa.init(self.game.base_size[0], self.game.base_size[1])
         
         #  Reset animation flags (nếu có)
         self.dfa.diagram_animating = False

@@ -1,0 +1,11 @@
+// My NFA
+digraph {
+	q0 [label=q0 shape=circle]
+	q1 [label=q1 shape=doublecircle]
+	q0 -> q0 [label=a]
+	q0 -> q1 [label=b]
+	q1 -> q1 [label="a, b"]
+	node [shape=none]
+	start [label=""]
+	start -> q0 [label=""]
+}

@@ -19,8 +19,8 @@ class MainMenuScene(Scene):
         button_size = (144, 48)
         button_pos_x = self.align_x - (button_size[0] // 2)
         button_pos_y = (self.game.base_size[1] // 2) + offset_y
-        self.play_btn_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/UIs/Buttons/resume.png", button_size[0], button_size[1], 3)
-        self.setting_btn_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/UIs/Buttons/setting.png", button_size[0], button_size[1], 3)
+        self.play_btn_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/UIs/Buttons/play.png", button_size[0], button_size[1], 3)
+        self.setting_btn_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/UIs/Buttons/menu_setting.png", button_size[0], button_size[1], 3)
         self.play_btn = ButtonWithSprites(button_pos_x, button_pos_y, self.play_btn_sprites)
         self.setting_btn = ButtonWithSprites(button_pos_x, button_pos_y + spacing * 1, self.setting_btn_sprites)
 

@@ -5,7 +5,6 @@ class SettingScene(Scene):
     def __init__(self, game, name='setting'):
         super().__init__(game, name)
 
-
     
     def update(self, dt):
         pass

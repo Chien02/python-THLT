@@ -10,8 +10,8 @@ class Machine(Entity):
         super().__init__(pos)
 
         # Loads animations
-        sprite_size_x = 144
-        sprite_size_y = 144
+        sprite_size_x = 180
+        sprite_size_y = 180
         idle_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Characters/Machine/idle.png", sprite_size_x, sprite_size_y, 4)
         happy_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Characters/Machine/happy.png", sprite_size_x, sprite_size_y, 4)
         cry_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Characters/Machine/cry.png", sprite_size_x, sprite_size_y, 4)
