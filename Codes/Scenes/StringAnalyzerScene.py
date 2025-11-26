@@ -1,7 +1,7 @@
 import pygame
 import json
 from Codes.Scenes.SceneBase import Scene
-from Codes.Components.Automata.DFA import DFA
+from Codes.Components.Automata.FA import FA
 from Codes.Mechanics.WordGenerator.BannedListGenerator import BannedListGenerator
 from Codes.Mechanics.Timer import Timer
 from Codes.Mechanics.Score import Score
@@ -21,8 +21,7 @@ class StringAnalyzerScene(Scene):
 
         # Load assets
         frame_size = (90, 90)
-        self.state_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Elements/Diagram/circles.png", frame_size[0], frame_size[1], 3)
-        self.arrow_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Elements/Diagram/arrows.png", frame_size[0], frame_size[1], 3)
+        self.state_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Elements/Diagram/circles.png", frame_size[0], frame_size[1], 4)
 
         # Add texts from collided chatboxes
         self.texts = []
@@ -33,17 +32,17 @@ class StringAnalyzerScene(Scene):
         self.current_text_index = 0
         if self.texts:
             self.current_text = self.texts[self.current_text_index]
-        
+        self.pattern_pos = (self.screen_width // 2, self.screen_height - 135)
+
         # keywords
         self.keywords = self.load_keywords("Data/keywords.json")["keywords"]
 
         # Init Timer
-        self.timer = Timer(duration=5.0, auto_start=False)
+        self.timer = Timer(duration=10.0, auto_start=False)
         self.timer.on_timeout = self.on_timer_timeout  # Set callback
 
-        # Init_DFA based on text
-        self.dfa : DFA = DFA(self, self.current_text, self.game.base_size)
-        self.dfa.init(self.game.base_size[0], self.game.base_size[1])
+        # Init_FA based on text
+        self.fa : FA = FA(self, self.current_text, self.game.base_size)
 
         # Dừng lại khi xử lý hết chatbox được truyền vào:
         if self.current_text_index != len(self.texts):
@@ -51,13 +50,13 @@ class StringAnalyzerScene(Scene):
         else:
             self.analyzing = False
         
-        #  Start timer sau khi DFA vẽ xong
+        #  Start timer sau khi FA vẽ xong
         self.timer.start()
 
     def handle_events(self, events):
         for event in events:
             # Handle events specific to String Analyzer Scene
-            return self.dfa.handle_events([event])
+            return self.fa.handle_events([event])
         return True
 
     def update(self, dt):
@@ -68,7 +67,8 @@ class StringAnalyzerScene(Scene):
         # Update timer
         self.timer.update(dt)
 
-        self.dfa.update(dt)
+        self.fa.update(dt)
+
         # Nếu ngưng analyzing thì dừng lại và chuyển về màn hình chính
         if not self.analyzing:
             self.game.manager.pop()
@@ -92,19 +92,19 @@ class StringAnalyzerScene(Scene):
             self._bg_scaled = pygame.transform.scale(self._bg_orig, (self.screen_width, self.screen_height))
             self._bg_scaled_size = (self.screen_width, self.screen_height)
 
-        if self._bg_scaled:
-            screen.blit(self._bg_scaled, (0, 0))
-        else:
-            screen.blit(self._bg_orig, (0, 0))
-        
-        self.dfa.draw_diagram(screen, self.state_sprites)
-
-        # Background và DFA
+        # Background và FA
         screen.blit(self._bg_scaled or self._bg_orig, (0, 0))
-        self.dfa.draw_diagram(screen, self.state_sprites)
-        
-        """ Vẽ timer"""
+        self.fa.draw_diagram(screen, self.state_sprites)
         # Vẽ timer (góc trên bên trái)
+        self._draw_timer(screen)
+        # Vẽ điểm
+        self.main_scene.score.draw(screen)
+        #  Hiển thị progress - bao nhiêu chuỗi và chuỗi hiện tại là thứ mấy
+        self._draw_progress(screen)
+        # Vẽ pattern
+        self._draw_pattern(screen)
+    
+    def _draw_timer(self, screen):
         screen_center_pos = self.game.WINDOW_WIDTH / 2
         screen_bottom_pos = self.game.WINDOW_HEIGHT - 50
         self.timer.draw(
@@ -115,13 +115,24 @@ class StringAnalyzerScene(Scene):
             height=20,
             style='bar'  # hoặc 'circle', 'text'
         )
-        
-        # Vẽ điểm
-        self.main_scene.score.draw(screen)
-
-        #  Hiển thị progress nhập chuỗi
-        self._draw_progress(screen)
     
+    def _draw_pattern(self, screen):
+        DARK_ORANGE = (110, 39, 39) # RGB
+        font = pygame.font.Font(None, 40)
+        pattern_surf = font.render(self.current_text, True, DARK_ORANGE)
+        pattern_rect = pattern_surf.get_rect(center=self.pattern_pos)
+        screen.blit(pattern_surf, pattern_rect)
+    
+    def _draw_pattern_output(self, screen):
+        YELLOW = (249, 194, 43)
+        GREEN = (145, 219, 105)
+        RED = (174, 35, 52)
+        font = pygame.font.Font(None, 40)
+
+        pattern_output_surf = font.render(self.fa.output, True, YELLOW)
+        pattern_output_rect = pattern_output_surf.get_ret(center=(self.pattern_pos))
+        screen.blit(pattern_output_surf, pattern_output_rect)
+
     def _draw_progress(self, screen):
         """Hiển thị text đang ở đâu trong danh sách"""
         ORANGE = (247, 150, 23)
@@ -192,13 +203,12 @@ class StringAnalyzerScene(Scene):
         #  Chuyển sang text tiếp theo
         self.current_text = self.texts[self.current_text_index]
         
-        #  TẠO MỚI DFA với text mới (KHÔNG dùng reset)
-        self.dfa = DFA(self, self.current_text)
-        self.dfa.init(self.game.base_size[0], self.game.base_size[1])
+        #  TẠO MỚI FA với text mới (KHÔNG dùng reset)
+        self.fa = FA(self, self.current_text, self.game.base_size)
         
         #  Reset animation flags (nếu có)
-        self.dfa.diagram_animating = False
-        self.dfa.analyzing_flag = True
+        self.fa.diagram_animating = False
+        self.fa.analyzing_flag = True
         
         #  Restart timer cho text mới
         self.timer.restart()
@@ -206,4 +216,4 @@ class StringAnalyzerScene(Scene):
     def is_out_of_texts(self):
         """Kiểm tra xem đã hết text chưa"""
         return self.current_text_index >= len(self.texts)
-        
+    

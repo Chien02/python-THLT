@@ -43,6 +43,10 @@ class Chatbox:
         self.is_alive = True
         self.pause_fade = False  # Dừng fade khi đang di chuyển
 
+        # Drag and drop
+        self.is_dragging = False
+        self.drag_offset = pygame.Vector2(0, 0)
+        
         # Hàm callback gọi đến spawner khi chatbox ngủm
         self._on_chatbox_die = None
 
@@ -97,16 +101,70 @@ class Chatbox:
     
     def handle_events(self, events, chat_num=None):
         """
-        Handle events (giữ lại để tương thích, nhưng không dùng nữa)
+        Handle mouse events cho drag and drop
         """
-        # Không cần xử lý mouse events nữa vì dùng keyboard
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # Left mouse button
+                    mouse_pos = pygame.mouse.get_pos()
+                    if self.collision_rect.collidepoint(mouse_pos):
+                        self._start_dragging(mouse_pos)
+                        return True
+            
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if event.button == 1:
+                    if self.is_dragging:
+                        self._stop_dragging()
+                        return True
+            
+            elif event.type == pygame.MOUSEMOTION:
+                if self.is_dragging:
+                    mouse_pos = pygame.mouse.get_pos()
+                    self._drag_to(mouse_pos)
+                    return True
+        
         return False
+    
+    def _start_dragging(self, mouse_pos):
+        """Bắt đầu kéo chatbox"""
+        self.is_dragging = True
+        self.pause_fade = True
+        
+        # Tính offset giữa mouse và top-left của chatbox
+        self.drag_offset = pygame.Vector2(
+            self.collision_rect.x - mouse_pos[0],
+            self.collision_rect.y - mouse_pos[1]
+        )
+        
+        # Dừng tween animation nếu đang chạy
+        if self.is_moving:
+            self.is_moving = False
+            self.move_tween_x = None
+            self.move_tween_y = None
+        
+        print(f"Started dragging chatbox at {mouse_pos}")
+    
+    def _drag_to(self, mouse_pos):
+        """Kéo chatbox tới vị trí mới"""
+        new_x = mouse_pos[0] + self.drag_offset.x
+        new_y = mouse_pos[1] + self.drag_offset.y
+        
+        self.collision_rect.x = int(new_x)
+        self.collision_rect.y = int(new_y)
+        self.current_pos.x = self.collision_rect.x
+        self.current_pos.y = self.collision_rect.y
+    
+    def _stop_dragging(self):
+        """Dừng kéo chatbox"""
+        self.is_dragging = False
+        self.pause_fade = False
+        print(f"Stopped dragging chatbox at ({self.collision_rect.x}, {self.collision_rect.y})")
 
     def update(self, delta_time):
         """Update timer, movement animation, và fade-out alpha"""
         
         #  Update movement tweens
-        if self.is_moving:
+        if self.is_moving and not self.is_dragging:
             if self.move_tween_x and self.move_tween_y:
                 # Update tweens
                 self.move_tween_x.update()
@@ -129,7 +187,7 @@ class Chatbox:
         #  Update timer
         self.timer += delta_time
         
-        #  Calculate alpha (chỉ khi KHÔNG đang di chuyển)
+        #  Calculate alpha (chỉ khi KHÔNG đang di chuyển hoặc kéo)
         if not self.pause_fade:
             time_remaining = self.lifetime - self.timer
             if time_remaining <= self.fade_duration:
@@ -141,9 +199,8 @@ class Chatbox:
                 # Still visible
                 self.alpha = 255
         else:
-            #  Giữ alpha ở mức hiện tại khi đang di chuyển
+            #  Giữ alpha ở mức hiện tại khi đang di chuyển hoặc kéo
             self.alpha = 255
-            pass
 
     def draw(self, screen):
         """Vẽ chatbox với alpha"""
@@ -189,6 +246,8 @@ class Chatbox:
         self.is_alive = False
         if self.is_moving:
             self.is_moving = False
+        if self.is_dragging:
+            self.is_dragging = False
         if self._on_chatbox_die:
             callback = self._on_chatbox_die
             callback()
@@ -199,8 +258,8 @@ class Chatbox:
         if not self.is_alive:
             return True
         
-        # Chết khi hết thời gian (trừ khi đang di chuyển)
-        if not self.is_moving:
+        # Chết khi hết thời gian (trừ khi đang di chuyển hoặc kéo)
+        if not self.is_moving and not self.is_dragging:
             self.is_alive = self.timer < self.lifetime
         
         return not self.is_alive

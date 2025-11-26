@@ -212,6 +212,9 @@ class ChatboxSpawner:
         if self.sending_chatbox: return False # Đang gửi thì không nhận input
         
         for event in events:
+            for chatbox in self.chatboxes:
+                chatbox.handle_events([event])
+            
             if event.type == pygame.KEYDOWN:
                  #  Nhận input 1, 2, 3
                 if event.key in [pygame.K_1, pygame.K_2, pygame.K_3]:
@@ -222,6 +225,8 @@ class ChatboxSpawner:
                         # Đổi trạng thái trở về bình thường
                         self.order_nums[event.unicode] = {'current_state': self.CHATBOX_STATE[0]} # 0 - 1: picked
                         chatbox : Chatbox = self.fixed_chatboxes[event.unicode]
+                        if not chatbox:
+                            return
                         chatbox.current_sprite = self.base_sprites[chatbox_index]
                     else:
                         self.user_input.append(event.unicode)
@@ -229,6 +234,9 @@ class ChatboxSpawner:
                         # Đổi trạng thái của chatbox được chọn
                         self.order_nums[event.unicode] = {'current_state': self.CHATBOX_STATE[1]} # 0 - 1: picked
                         chatbox : Chatbox = self.fixed_chatboxes[event.unicode]
+                        if not chatbox:
+                            self.user_input.remove(event.unicode)
+                            return
                         chatbox.current_sprite = self.picked_sprites[chatbox_index]
 
                         print(f"From ChatboxSpawner: Added chatbox {event.unicode} to queue")

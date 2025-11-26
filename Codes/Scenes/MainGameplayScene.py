@@ -37,7 +37,7 @@ class MainGamePlayScene(Scene):
         self.analyzing_background = pygame.image.load("Assets/Images/Backgrounds/AnalyzingBackground.png").convert()
 
         # Banned List
-        self.num_of_banned = 5
+        self.num_of_banned = 3
         self.banned_generator = BannedListGenerator()
         self.banned_list = self.banned_generator.generate(self.num_of_banned)
 
