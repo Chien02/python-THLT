@@ -3,6 +3,7 @@ import pygame
 import random
 from enum import Enum
 from tweener import *
+from Codes.Utils.FrameLoader import FrameLoader
 from Codes.Components.Automata.RandomFAGenerate import RandomAutomatonGenerator
 from Codes.Components.Automata.AutomatonLayoutMixin import AutomatonLayoutMixin
 
@@ -17,8 +18,9 @@ class FA:
     YELLOW = (255, 255, 0)
     BLACK = (0, 0, 0)
 
-    def __init__(self, pattern_string):
+    def __init__(self, pattern_string, screen_size):
         self.pattern = pattern_string.lower()
+        self.screen_size = screen_size
 
         # Sẽ được tạo từ RandomAutomatonGenerator
         self.states = []
@@ -39,6 +41,9 @@ class FA:
         # Kích thước của các rect là như nhau, và kích thước phụ thuộc vào kích thước sprite
         self.rect_size = (90, 90)
         self.state_rects = {} # {'q1': rect()}
+
+        # Sprites
+        self.looped_arrow = pygame.image.load("Assets/Images/Elements/Diagram/loop_arrow.png").convert_alpha()
 
         # Animation cho từng state (sẽ được init sau khi states được tạo)
         self.state_animations = {}  # {state_index: {'scale': Tween, 'shake': Tween}}
@@ -337,7 +342,7 @@ class FA:
             screen.blit(text, text_rect)
 
     def _draw_transitions(self, screen):
-        """Vẽ tất cả transition theo cấu trúc dict mới"""
+        """Vẽ tất cả transition theo cấu trúc edges: mỗi from_state đi đến to_state với danh sách các nhãn"""
         font = pygame.font.Font(None, 38)
 
         # Vẽ mũi tên start → q0
@@ -345,22 +350,42 @@ class FA:
         start_arrow_pos = (start_pos[0] - 100, start_pos[1])
         self._draw_arrow(screen, start_arrow_pos, start_pos, "", font, False, True)
 
-        # Duyệt transitions dạng dict
-        for from_state, char_map in self.transitions.items():
-            for char, to_list in char_map.items():
-                for to_state in to_list:
+        for from_state in self.states:
+            edges = self.collect_chars_from_same_next_state(from_state)
+            if not edges: continue
+            # Duyệt qua từng to_state, vẽ mũi tên đi đến từng next_state đó
+            # với mũi tên sẽ được truyền vào danh sách các nhãn từ from_state đến to_state
+            for to_state in edges:
+                if from_state == to_state:
+                    self._draw_self_loop(screen, to_state, edges[to_state], font)
+                else:
                     from_pos = self.state_positions[from_state]
                     to_pos = self.state_positions[to_state]
-                    
-                    # Vẽ mũi tên tròn nếu lặp, ngược lại vẽ mũi tên thẳng
-                    if from_state == to_state:
-                        self._draw_self_loop(screen, to_state, char, font)
-                    else:
-                        self._draw_arrow(screen, from_pos, to_pos, char, font)
+                    self._draw_arrow(screen, from_pos, to_pos, edges[to_state], font)
 
-    def _draw_arrow(self, screen, start, end, label, font, adjust_start=True, adjust_end=True):
+
+    def collect_chars_from_same_next_state(self, from_state):
+        edges : dict = {}                  # Danh sách các nhãn dẫn đến cùng trạng thái tiếp theo - {'to_state': ['a', 'm']}
+        to_states = []                      # Danh sách các trạng thái tiếp theo từ trạng thái hiện tại
+        for char, to_list in self.transitions[from_state].items():
+            # Khởi tạo dict lần đầu duyệt
+            if len(to_states) == 0:
+                to_states = to_list
+                for state in to_states:
+                    edges[state] = [char]
+            else:
+                for state in to_list:
+                    # Nếu phát hiện có state đã xuất hiện thì thêm kí tự mới vào.
+                    if state in edges:
+                        edges[state].append(char)
+        
+        # kết quả trả về edges với danh sách các mũi tên cần vẽ đi từ A đến to_list
+        return edges
+
+
+    def _draw_arrow(self, screen, start, end, chars, font, adjust_start=True, adjust_end=True):
         """
-        Vẽ mũi tên từ start đến end
+        Vẽ mũi tên từ start đến end với danh sách các nhãn
         
         Args:
             adjust_start: Có rút ngắn điểm bắt đầu không (False cho start arrow)
@@ -407,23 +432,25 @@ class FA:
         
         pygame.draw.polygon(screen, line_color, [end_adj, arrow_p1, arrow_p2])
         
-        # Vẽ label
-        if label != "":
-            mid_x = (start[0] + end[0]) / 2
-            mid_y = (start[1] + end[1]) / 2
+        # Vẽ các nhãn
+        mid_x = (start[0] + end[0]) / 2
+        mid_y = (start[1] + end[1]) / 2
             
-            # Offset label để không đè lên mũi tên
-            # Tính vector vuông góc
-            perp_dx = -dy
-            perp_dy = dx
-            offset = 20
-            
-            label_x = mid_x + perp_dx * offset
-            label_y = mid_y + perp_dy * offset
-            
-            text = font.render(label, True, (0, 0, 0))
-            text_rect = text.get_rect(center=(label_x, label_y))
-            
+        # Offset label để không đè lên mũi tên
+        # Tính vector vuông góc
+        perp_dx = -dy
+        perp_dy = dx
+        offset = 20
+        label_x = mid_x + perp_dx * offset
+        label_y = mid_y + perp_dy * offset
+
+        # Nếu có nhiều hơn 1 char thì bổ sung thêm dấu phẩy ở giữa
+        for idx, char in enumerate(chars):
+            text_surf = font.render(char, True, (0, 0, 0))
+            text_width = text_surf.get_width()
+            label_offset_x = text_width + 10
+            text_rect = text_surf.get_rect(center=(label_x + (idx * label_offset_x), label_y))
+                
             bg_rect = text_rect.inflate(8, 6)
             bg_rect_color = self.WHITE
             bg_border_color = self.BLACK
@@ -433,55 +460,49 @@ class FA:
 
             pygame.draw.rect(screen, bg_rect_color, bg_rect) # foreground
             pygame.draw.rect(screen, bg_border_color, bg_rect, 2) # border
-            screen.blit(text, text_rect)
+            screen.blit(text_surf, text_rect)
 
-    def _draw_self_loop(self, screen, state, label, font):
+            # Thêm ',' nếu ko phải lần lặp đầu
+            if idx == 0: return
+            comma_surf = font.render(',', True, (0, 0, 0))
+            comma_rect = comma_surf.get_rect(center=(label_x + (idx * label_offset_x // 2), label_y))
+            screen.blit(comma_surf, comma_rect)
+
+    def _draw_self_loop(self, screen, state, chars: list, font):
         """Vẽ self-loop cho một state."""
         pos = self.state_positions[state]
         x, y = pos
 
         loop_radius = 40
-        loop_offset = -50  # vẽ phía trên node
+        loop_offset = -70  # vẽ phía trên node
 
         # Tâm của vòng loop
         loop_center = (x, y + loop_offset)
-
-        # Vẽ vòng cung
-        rect = pygame.Rect(
-            loop_center[0] - loop_radius,
-            loop_center[1] - loop_radius,
-            loop_radius * 2,
-            loop_radius * 2
-        )
-
-        # Vẽ 270° đến 90° (tức là nửa vòng phía trên)
-        pygame.draw.arc(screen, self.WHITE, rect, math.radians(200), math.radians(-20), 3)
-
-        # Vẽ mũi tên của loop
-        arrow_angle = -math.pi / 2  # hướng lên
-        arrow_base = (
-            loop_center[0] + loop_radius * math.cos(arrow_angle),
-            loop_center[1] + loop_radius * math.sin(arrow_angle)
-        )
-
-        arrow_size = 12
-        arrow_p1 = (
-            arrow_base[0] - arrow_size * math.cos(arrow_angle - math.pi/6),
-            arrow_base[1] - arrow_size * math.sin(arrow_angle - math.pi/6)
-        )
-        arrow_p2 = (
-            arrow_base[0] - arrow_size * math.cos(arrow_angle + math.pi/6),
-            arrow_base[1] - arrow_size * math.sin(arrow_angle + math.pi/6)
-        )
-
-        pygame.draw.polygon(screen, self.WHITE, [arrow_base, arrow_p1, arrow_p2])
+       
+        # Vẽ hình mũi tên tự trỏ vào chính nó
+        arrow_rect = self.looped_arrow.get_rect(center=loop_center)
+        screen.blit(self.looped_arrow, arrow_rect)
 
         # Vẽ label
-        text = font.render(label, True, (0, 0, 0))
-        text_rect = text.get_rect(center=(loop_center[0], loop_center[1] - loop_radius - 15))
+        for idx, char in enumerate(chars):
+            text = font.render(char, True, (0, 0, 0))
+            text_width = text.get_width()
+            offset_x = text_width + 15 
+            text_rect = text.get_rect(center=(loop_center[0] + (idx * offset_x), loop_center[1] - loop_radius - 5)) # Nhãn sẽ dính một phần vào mũi tên để phân biệt
 
-        bg_rect = text_rect.inflate(8, 6)
-        pygame.draw.rect(screen, self.WHITE, bg_rect)
-        pygame.draw.rect(screen, self.BLACK, bg_rect, 2)
-        screen.blit(text, text_rect)
+            bg_rect = text_rect.inflate(8, 6) # Background cho phần text
+            bg_rect_color = self.WHITE
+            if pos == self.state_positions[self.current_state]: # Cập nhật màu cho nhãn của state đang duyệt (current_state)
+                bg_rect_color = self.YELLOW
+            
+            pygame.draw.rect(screen, bg_rect_color, bg_rect)
+            pygame.draw.rect(screen, self.BLACK, bg_rect, 2)
+            screen.blit(text, text_rect)
+
+            # Thêm dấu phẩy nếu khác lần lặp đầu
+            if idx == 0: return
+            comma_surf = font.render(',', True, (0, 0, 0))
+            comma_rect = comma_surf.get_rect(center=(loop_center[0] + (idx * offset_x), loop_center[1] - loop_radius - 5))
+            screen.blit(comma_surf, comma_rect)
+
     #endregion

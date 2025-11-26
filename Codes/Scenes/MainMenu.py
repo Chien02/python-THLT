@@ -4,7 +4,6 @@ from Codes.Scenes.MainGameplayScene import MainGamePlayScene
 from Codes.Scenes.UILayerScene import UILayerScene
 from Codes.Components.Buttons import *
 from Codes.Utils.FrameLoader import FrameLoader
-from Codes.Utils.SpriteFrame import SpriteFrames
 
 class MainMenuScene(Scene):
     def __init__(self, game, name='main_menu'):

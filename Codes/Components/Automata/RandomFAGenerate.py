@@ -31,18 +31,17 @@ class RandomAutomatonGenerator:
     def generate(self, input_string):
         """
         Sinh NFA ngẫu nhiên nhưng luôn chấp nhận chuỗi.
-        Tích hợp loop thông minh dựa trên chuỗi đầu vào.
+        Tích hợp loop tại mỗi state dựa trên chuỗi đầu vào.
         """
         n = len(input_string)
 
         # ----------------------------------
         # 1. Tạo main path
         # ----------------------------------
-        states = [f"q{i}" for i in range(n + 1)]
+        states : list = [f"q{i}" for i in range(n + 1)]
         start_state = "q0"
-        accept_state = f"q{n}"
-
-        transitions = {s: {} for s in states}
+        accept_states : list = [f"q{n}"]
+        transitions : dict = {s: {} for s in states} # {'q0': {'a': [q0, q1, q3]}}, {'q0': {'b': [q0, q2, q3]}}
 
         # Main path
         for i, char in enumerate(input_string):
@@ -50,7 +49,7 @@ class RandomAutomatonGenerator:
             t = states[i + 1]
             transitions[s].setdefault(char, []).append(t)
 
-        alphabet = sorted(set(input_string))
+        alphabet : set = sorted(set(input_string))
 
         # ----------------------------------
         # 2. Thêm extra states
@@ -100,14 +99,98 @@ class RandomAutomatonGenerator:
                         transitions[s][c].append(s)
 
         # ----------------------------------
-        # 6. Đảm bảo mỗi state có ít nhất 1 transition cho mỗi ký tự (tùy chọn)
-        #    Nhưng để game khó, ta để 70% rơi vào dead-end tự nhiên.
+        # 6. Kiểm tra lại có bất kì state nào không có state khác đi đến thì loại bỏ state đó.
+        # Mục đích: loại bỏ sự dư thừa không cần thiết, sự dư thừa này đến từ việc tạo ngẫu nhiên.
         # ----------------------------------
+        # Bằng cách kiểm tra trong danh sách các next_state, nếu nó không nằm trong bất kì danh sách nào thì
+        # loại bỏ state đó. TRỪ START STATE.
+        # Những nơi cần loại bỏ:
+        # [all_states, transitions, accept_states(nếu có)]
+        # LOOP cho đến khi không còn state nào bị xóa
+        while True:
+            removed_in_this_iteration = []
+            states_to_check = [s for s in all_states if s not in accept_states]
+            
+            for state in states_to_check:
+                # Kiểm tra 1: State không có outgoing transition
+                if len(transitions[state]) == 0:
+                    self.remove_state_from_transitions(transitions, removed_in_this_iteration, state)
+                    print(f"From FAGenerator: Removed {state} 'cause it had no transition")
+                
+                # Kiểm tra 2: State chỉ có self-loop (đi đến chính nó)
+                # Kiểm tra xem tất cả next_states có phải chỉ là chính nó không
+                elif self.is_only_self_loop(state, transitions):
+                    self.remove_state_from_transitions(transitions, removed_in_this_iteration, state)
+                    print(f"From FAGenerator: Removed {state} 'cause it is self-loop only")
+                
+                # Kiểm tra 3: Không có state nào khác đi đến nó (unreachable)
+                elif not self.is_in_next_states(state, transitions) and state != start_state:
+                    self.remove_state_from_transitions(transitions, removed_in_this_iteration, state)
+                    print(f"From FAGenerator: Removed {state} 'cause no one go to it")
+            
+            # Nếu không xóa được state nào trong vòng lặp này, thoát
+            if len(removed_in_this_iteration) == 0:
+                break
+            
+            # Xóa khỏi all_states
+            for state in removed_in_this_iteration:
+                if state in all_states:
+                    all_states.remove(state)
+                if state in accept_states:
+                    accept_states.remove(state)
+        
+        print("FA after removed!")
+        print(f"{all_states}")
+        print(f"{alphabet}")
+        for state in transitions:
+            print(f"{state}: {transitions[state].items()}")
 
         return {
             "states": all_states,
             "alphabet": alphabet,
             "start": start_state,
-            "accepts": [accept_state],
+            "accepts": accept_states,
             "transitions": transitions,
         }
+
+    def is_only_self_loop(self, state, transitions):
+        """
+        Kiểm tra xem state có chỉ đi đến chính nó không
+        (Nghĩa là tất cả next_states đều là chính nó)
+        """
+        if state not in transitions:
+            return False
+        
+        for char, to_list in transitions[state].items():
+            for next_state in to_list:
+                if next_state != state:
+                    # Có ít nhất một next_state không phải là chính nó
+                    return False
+        
+        # Nếu tất cả next_states đều là chính nó
+        return len(transitions[state]) > 0
+
+    def is_in_next_states(self, state, transitions):
+        """Kiểm tra xem state có được state nào khác tham chiếu đến không"""
+        for _state, edges in transitions.items():
+            if _state == state:
+                continue
+            for char, to_list in edges.items():
+                if state in to_list:
+                    return True
+        return False
+
+    def remove_state_from_transitions(self, transitions, removed_states, state):
+        """Xóa state khỏi transitions"""
+        removed_states.append(state)
+        self.remove_from_to_list(transitions, state)
+        if state in transitions:
+            transitions.pop(state)
+
+    def remove_from_to_list(self, transitions, state):
+        """Xóa state khỏi tất cả danh sách next_states"""
+        for _state in list(transitions.keys()):
+            for char in list(transitions[_state].keys()):
+                if state in transitions[_state][char]:
+                    transitions[_state][char].remove(state)
+                    

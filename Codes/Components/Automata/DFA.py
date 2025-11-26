@@ -4,14 +4,14 @@ from Codes.Components.Automata.FA import FA, SPRITE_TYPE
 from Codes.Utils.TweenAnimation import Tween, Easing, EasingMode
 
 class DFA(FA):
-    def __init__(self, analyzer, pattern_string):
+    def __init__(self, analyzer, pattern_string, screen_size):
         """
         Khởi tạo DFA từ chuỗi pattern (linear matching)
         
         Args:
             pattern_string: Chuỗi cần khớp (ví dụ: "madam", "moon")
         """
-        super().__init__(pattern_string)
+        super().__init__(pattern_string, screen_size)
         from Codes.Scenes.StringAnalyzerScene import StringAnalyzerScene
         self.analyzer : StringAnalyzerScene = analyzer
         self.analyzing_flag = True

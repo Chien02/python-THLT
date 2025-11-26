@@ -24,7 +24,7 @@ class ChatboxSpawner:
         self.chatboxes: list[Chatbox] = []
         self.fixed_chatboxes = {} # {0: chatboxes[0], 1: chatboxes[1], ...}
         self.time_since_last_spawn = 0.0
-        self.spawnable = False
+        self.spawnable = True
 
         # Định nghĩa các tập ký tự
         self.letters = string.ascii_lowercase  # a-z
@@ -200,7 +200,6 @@ class ChatboxSpawner:
         if self.entry_flag and self.time_since_last_spawn >= self.entry_time:
             self.entry_flag = False
 
-
         # Sinh chatbox mới sau mỗi chu kỳ
         if self.time_since_last_spawn >= (self.spawn_interval + self.chatbox_lifetime):
             self.time_since_last_spawn = 0.0
@@ -288,8 +287,6 @@ class ChatboxSpawner:
             pygame.draw.rect(screen, order_bg_color, bg_rect, border_radius=5)  # background for the text
             screen.blit(order_surf, order_rect)
 
-
-    
     def _draw_input_queue(self, screen):
         '''Hiển thị các chatbox đã chọn'''
         if not self.user_input:

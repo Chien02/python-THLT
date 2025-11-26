@@ -187,6 +187,8 @@ class Chatbox:
     def die(self):
         """Đánh dấu chatbox để xóa"""
         self.is_alive = False
+        if self.is_moving:
+            self.is_moving = False
         if self._on_chatbox_die:
             callback = self._on_chatbox_die
             callback()

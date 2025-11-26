@@ -12,11 +12,11 @@ from Codes.Mechanics.Score import Score
 
 class Game:
 # ---- Variables ------
+    SCALED_RATIO = 4
+    WINDOW_WIDTH = 1024
+    WINDOW_HEIGHT = 768
 # UI's properties
     def __init__(self):
-        SCALED_RATIO = 4
-        self.WINDOW_WIDTH = 1024
-        self.WINDOW_HEIGHT = 768
         # base (logical) resolution everything is laid out in
         self.base_size = (self.WINDOW_WIDTH, self.WINDOW_HEIGHT)
         # actual window size (may differ when user resizes)

@@ -42,7 +42,7 @@ class StringAnalyzerScene(Scene):
         self.timer.on_timeout = self.on_timer_timeout  # Set callback
 
         # Init_DFA based on text
-        self.dfa : DFA = DFA(self, self.current_text)
+        self.dfa : DFA = DFA(self, self.current_text, self.game.base_size)
         self.dfa.init(self.game.base_size[0], self.game.base_size[1])
 
         # Dừng lại khi xử lý hết chatbox được truyền vào:
@@ -58,7 +58,7 @@ class StringAnalyzerScene(Scene):
         for event in events:
             # Handle events specific to String Analyzer Scene
             return self.dfa.handle_events([event])
-        return False
+        return True
 
     def update(self, dt):
         # update score if main scene is pause
@@ -133,10 +133,9 @@ class StringAnalyzerScene(Scene):
         progress_text = f"Text {self.current_text_index + 1} / {len(self.texts)}"
         text_surf = font.render(progress_text, True, WHITE)
         
-        # Vị trí: Trung tâm phía dưới đồ thị
-        horizontal_center = self.game.base_size[0] // 2
-        below_combo_pos = (self.game.base_size[1] // 2) + 120
-        text_rect = text_surf.get_rect(center=(horizontal_center, below_combo_pos))
+        # Vị trí: window's top-right
+        top_right = (self.game.base_size[0] - 175,  50)
+        text_rect = text_surf.get_rect(center=top_right)
         
         # Background
         bg_rect = text_rect.inflate(15, 10)
@@ -148,8 +147,8 @@ class StringAnalyzerScene(Scene):
         # Progress bar
         bar_width = 200
         bar_height = 10
-        bar_x = horizontal_center - bar_width // 2
-        bar_y = below_combo_pos + 20
+        bar_x = top_right[0] - bar_width // 2
+        bar_y = top_right[1] + 20
         
         # Progress bar
         progress = (self.current_text_index + 1) / len(self.texts)
