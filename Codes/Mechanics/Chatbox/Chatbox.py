@@ -109,12 +109,17 @@ class Chatbox:
                     mouse_pos = pygame.mouse.get_pos()
                     if self.collision_rect.collidepoint(mouse_pos):
                         self._start_dragging(mouse_pos)
+
+                        # Play drag audio
+                        self.spawner.game.audio.play_sfx('drag')
                         return True
             
             elif event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     if self.is_dragging:
                         self._stop_dragging()
+                        # Play drop audio
+                        self.spawner.game.audio.play_sfx('drop')
                         return True
             
             elif event.type == pygame.MOUSEMOTION:

@@ -1,5 +1,6 @@
 import pygame
 from Codes.Utils.SpriteFrame import SpriteFrames
+from Codes.Components.AudioManager import *
 
 class Button:
     def __init__(self, x, y, width, height, color, text, image_path=None):
@@ -7,6 +8,13 @@ class Button:
         self.color = color
         self.text = text
         self.font = pygame.font.Font(None, 36)
+
+        self.audio_manager = AudioManager()
+
+        self.sfx_button_press = self.audio_manager.create_audio_stream(
+            "Assets/Audio/SFX/button_press.wav",
+            AudioType.SFX
+        )
         
         # Load image if provided
         self.image = None
@@ -92,5 +100,7 @@ class ButtonWithSprites(Button):
     def is_clicked(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             self.current_state = self.sprites[2]
+            # Play audio
+            self.sfx_button_press.play()
             return self.rect.collidepoint(event.pos)
         return False

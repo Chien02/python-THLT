@@ -10,7 +10,6 @@ from Codes.Mechanics.WordGenerator.BannedListGenerator import BannedListGenerato
 from Codes.Mechanics.Score import Score
 from Codes.Entities.Machine.Machine import Machine
 
-
 class MainGamePlayScene(Scene):
     def __init__(self, game, name='main_game'):
         super().__init__(game, name)
@@ -30,7 +29,7 @@ class MainGamePlayScene(Scene):
         self.machine = Machine(machine_pos)
 
         # Chatbox Spawner
-        self.chatbox_spawner = ChatboxSpawner(spawn_interval=4.0, chatbox_lifetime=5.0, machine_pos=machine_pos)
+        self.chatbox_spawner = ChatboxSpawner(self.game, spawn_interval=4.0, chatbox_lifetime=5.0, machine_pos=machine_pos)
 
         # Analysize section
         self.is_analyzing = False
@@ -63,9 +62,13 @@ class MainGamePlayScene(Scene):
         return False
 
     def update(self, dt):
+        # Play bgm
+        self.game.audio.play_bgm('main_game')
+
         if self.score:
             self.score.update(dt)
-        
+
+
         self.machine.update(dt)
         self.chatbox_spawner.update(dt)
         # Collision: let the machine check against current chatboxes
@@ -95,9 +98,13 @@ class MainGamePlayScene(Scene):
 
             # Thực hiện animation tùy thuộc vào flag is_happy
             if is_happy:
+                # Play audio
+                self.game.audio.play_sfx('collect')
                 self.machine.sprite_frames.play('happy', loop=False)
                 self.machine._waiting_for_animaiton = True
             else:
+                # Play hurt audio
+                self.game.audio.play_sfx('hurt')
                 self.machine.sprite_frames.play('cry', loop=False)
                 self.machine._waiting_for_animaiton = True
             

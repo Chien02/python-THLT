@@ -40,8 +40,8 @@ class RandomAutomatonGenerator:
         # 2. Thêm extra states
         # ----------------------------------
         extra_states = []
-        for i in range(self.max_extra_states):
-            s = f"q_extra_{i}"
+        for i in range(len(states), len(states) + self.max_extra_states):
+            s = f"q{i}"
             extra_states.append(s)
             transitions[s] = {}
 

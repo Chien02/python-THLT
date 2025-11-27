@@ -32,7 +32,7 @@ class StringAnalyzerScene(Scene):
         self.current_text_index = 0
         if self.texts:
             self.current_text = self.texts[self.current_text_index]
-        self.pattern_pos = (self.screen_width // 2, self.screen_height - 135)
+        self.pattern_pos = (self.screen_width // 2, self.screen_height - 120)
 
         # keywords
         self.keywords = self.load_keywords("Data/keywords.json")["keywords"]
@@ -52,6 +52,9 @@ class StringAnalyzerScene(Scene):
         
         #  Start timer sau khi FA vẽ xong
         self.timer.start()
+
+        # Các biến thuộc phần visual hiển thị chuỗi pattern input và output
+        self.pattern_width = 0
 
     def handle_events(self, events):
         for event in events:
@@ -103,6 +106,7 @@ class StringAnalyzerScene(Scene):
         self._draw_progress(screen)
         # Vẽ pattern
         self._draw_pattern(screen)
+        self._draw_pattern_output(screen)
     
     def _draw_timer(self, screen):
         screen_center_pos = self.game.WINDOW_WIDTH / 2
@@ -117,20 +121,41 @@ class StringAnalyzerScene(Scene):
         )
     
     def _draw_pattern(self, screen):
-        DARK_ORANGE = (110, 39, 39) # RGB
-        font = pygame.font.Font(None, 40)
-        pattern_surf = font.render(self.current_text, True, DARK_ORANGE)
+        DARK_BLUE = (72, 74, 119)
+        DARK_DARK= (46, 34, 47)
+        font = pygame.font.Font(None, 60)
+        pattern_surf = font.render(self.current_text, True, DARK_DARK)
         pattern_rect = pattern_surf.get_rect(center=self.pattern_pos)
-        screen.blit(pattern_surf, pattern_rect)
+        self.pattern_width = pattern_surf.get_width()
+
+        # Background for the pattern
+        bg_rect = pattern_rect.inflate(8, 6)
+        bg_border_color = DARK_BLUE
+        pygame.draw.rect(screen, bg_border_color, bg_rect, 4) # border
+        screen.blit(pattern_surf, pattern_rect) # pattern's text
     
-    def _draw_pattern_output(self, screen):
+    def _draw_pattern_output(self, screen, color_name='yellow'):
         YELLOW = (249, 194, 43)
         GREEN = (145, 219, 105)
         RED = (174, 35, 52)
-        font = pygame.font.Font(None, 40)
+        color = YELLOW
+        font = pygame.font.Font(None, 60)
 
-        pattern_output_surf = font.render(self.fa.output, True, YELLOW)
-        pattern_output_rect = pattern_output_surf.get_ret(center=(self.pattern_pos))
+        # Tự kiểm tra xem chuỗi đúng hay sai, dựa vào đó mà đổi màu
+        output = self.fa.output
+        if len(output) == len(self.current_text): # Trường hợp khi độ dài bằng nhau, nếu đúng thì xanh ngược lại là đỏ
+            color = GREEN if output == self.current_text else RED
+        elif len(output) > len(self.current_text): # Dài hơn thì đỏ chắc luôn
+            color = RED
+        else:
+            for i in range(len(output)):
+                if output[i] != self.current_text[i]:
+                    color = RED
+                    break
+            
+        pattern_output_surf = font.render(self.fa.output, True, color)
+        pattern_pos = (self.pattern_pos[0] - self.pattern_width // 2, self.pattern_pos[1]) if self.pattern_width != 0 else self.pattern_pos
+        pattern_output_rect = pattern_output_surf.get_rect(midleft=pattern_pos)
         screen.blit(pattern_output_surf, pattern_output_rect)
 
     def _draw_progress(self, screen):

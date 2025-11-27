@@ -84,6 +84,36 @@ class FA:
             rect.center = pos
             self.state_collision_rects[state] = rect
 
+    def _sync_state_collision_rects(self):
+        """Update collision rects to match current visual positions and scale.
+
+        This keeps click detection in sync with animations (scale/shake) and
+        any diagram-wide offset (e.g., when diagram is animating).
+        """
+        for state in self.states:
+            base_pos = self.state_positions[state]
+            anim = self.state_animations.get(state, {})
+            scale = anim.get('scale', 1.0)
+            shake_x = anim.get('shake_x', 0.0)
+
+            # Apply diagram y offset if any (when diagram animating we draw with y offset)
+            y_offset = getattr(self, 'diagram_y_offset', 0)
+
+            # Compute visual center used when drawing the sprite
+            vis_x = int(base_pos[0] + shake_x)
+            vis_y = int(base_pos[1] + y_offset)
+
+            # Update rect size according to scale so hitbox follows visual size
+            w = max(1, int(self.rect_size[0] * scale))
+            h = max(1, int(self.rect_size[1] * scale))
+
+            rect = self.state_collision_rects.get(state)
+            if rect is None:
+                rect = pygame.Rect(0, 0, w, h)
+                self.state_collision_rects[state] = rect
+            rect.size = (w, h)
+            rect.center = (vis_x, vis_y)
+
     #region Update
     def update(self, dt):
         # Update animations cho từng state
@@ -97,7 +127,6 @@ class FA:
         if not self.analyzing_flag: return
 
         # Kiểm tra để dừng
-
         if self.is_accepted() and self.is_completed():
             print("Analyzed!")
             self.analyzing_flag = False 
@@ -113,9 +142,11 @@ class FA:
         for state in self.states:
             if self.state_states[state]["current_sprite"] == SPRITE_TYPE.WRONG.value:
                 self.analyzing_flag = False
-                #   Trigger animation sai, delay việc stop_analyze để animation chạy xong
+                # Trigger animation sai, delay việc stop_analyze để animation chạy xong
                 self._animate_state_wrong(self.current_state)
                 self.analyzer.main_scene.score.add_wrong()
+                # Play audio
+                self.analyzer.game.audio.play_sfx('wrong_state')
                 return
 
     def is_accepted(self):
@@ -276,36 +307,32 @@ class FA:
         """
         Xử lý click chuột vào state
         """
+        # Ensure collision rects follow current visual state (scale, shake, diagram offset)
+        self._sync_state_collision_rects()
+
         for event in events:
             # Xử lý click chuột
-            if event.type != pygame.MOUSEBUTTONDOWN:
-                continue
-            
-            # FIX: Tìm state đầu tiên được click (không loop qua tất cả)
-            clicked_state = None
-            for state in self.state_collision_rects:
-                if self.state_collision_rects[state].collidepoint(event.pos):
-                    clicked_state = state
-                    print(f"From FA: clicked at {state}")
-                    break  # Dừng ngay sau khi tìm được state
-            
-            # Nếu không click vào state nào, bỏ qua
-            if clicked_state is None:
-                continue
-            
-            # Kiểm tra xem có transition từ current_state đến clicked_state không
-            char = self._is_next_state(clicked_state)
-            
-            if char:
-                # Chỉ return True nếu thực sự cập nhật được state
-                self.update_current_state(char, clicked_state)
-                return True
-            else:
-                # Nếu không có transition hợp lệ, cũng trả về True (consumed event)
-                # hoặc False nếu muốn pass sự kiện xuống
-                return False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # FIX: Tìm state đầu tiên được click (không loop qua tất cả)
+                clicked_state = None
+                for state in self.state_collision_rects:
+                    if self.state_collision_rects[state].collidepoint(event.pos):
+                        clicked_state = state
+                        print(f"From FA: clicked at {state}")
+                        break  # Dừng ngay sau khi tìm được state
+                
+                # Nếu không click vào state nào, bỏ qua
+                if clicked_state is None:
+                    continue
+                
+                # Kiểm tra xem có transition từ current_state đến clicked_state không
+                char = self._is_next_state(clicked_state)
+                
+                if char:
+                    # Chỉ return True nếu thực sự cập nhật được state
+                    self.update_current_state(char, clicked_state)
         
-        return False  # Không có sự kiện nào được xử lý
+        return True  # Không có sự kiện nào được xử lý
     
     def _is_next_state(self, state):
         """Kiểm tra state này có thuộc danh sách state kế tiếp của current_state không"""
@@ -322,20 +349,43 @@ class FA:
         self.current_state = new_state
         print(f"From FA: current_output = {self.output} - current_state = {self.current_state}")
         # Kiểm tra với mẫu đầu vào
-        if not self.check_pattern():
+        if not self.check_pattern(): # Trường hợp sai với mẫu đầu vào
+            self.state_states[self.current_state]['current_sprite'] = SPRITE_TYPE.WRONG.value
+        elif not self.is_accepted() and self.is_completed(): # Trường hợp là output và input đã trùng nhưng không đan gở vị trí kết thúc
+            self.state_states[self.current_state]['current_sprite'] = SPRITE_TYPE.WRONG.value
+
+            # Thực hiện animation lắc ở accept_states để nhắc người chơi phải đi đến cuối
+            for state in self.accept_states:
+                self._animate_state_wrong(state)
+        elif self.is_accepted() and self.check_pattern and not self.is_completed():
             self.state_states[self.current_state]['current_sprite'] = SPRITE_TYPE.WRONG.value
         else:
             self.state_states[self.current_state]['current_sprite'] = SPRITE_TYPE.RIGHT.value
             self.update_next_states()
+            # Thực hiện animation đúng
+            self._animate_state_correct(self.current_state)
+            # Play audio
+            self.analyzer.game.audio.play_sfx('click_state')
+            
     
     def update_next_states(self):
+        for state in self.states:
+            if self.state_states[state]['current_sprite'] == SPRITE_TYPE.CURRENT.value:
+                self.state_states[state]['current_sprite'] = SPRITE_TYPE.NORMAL.value
+
         for to_list in self.transitions.get(self.current_state, {}).values():
             for state in to_list:
                 self.state_states[state]['current_sprite'] = SPRITE_TYPE.CURRENT.value
+        
+        
     
     def check_pattern(self):
         """Kiểm tra xem có output có trùng với mẫu không"""
         n = len(self.output)
+        if n > len(self.pattern): # Nếu độ dài dài hơn thì dừng
+            self.analyzing_flag = False
+            return False
+        
         for i in range(n):
             if self.output[i] != self.pattern[i]:
                 return False
@@ -396,7 +446,7 @@ class FA:
                 sprite = pygame.transform.scale(sprite, new_size)
             
             # Vẽ rect của sprite tương ứng ---> Debug
-            pygame.draw.rect(screen, (255, 0, 0), self.state_collision_rects[state], 1)
+            # pygame.draw.rect(screen, (255, 0, 0), self.state_collision_rects[state], 1)
             
             # Vẽ sprite
             sprite_rect = sprite.get_rect(center=pos)
@@ -429,6 +479,7 @@ class FA:
             for to_state in edges:
                 if from_state == to_state:
                     self._draw_self_loop(screen, to_state, edges[to_state], font)
+                    continue
                 else:
                     from_pos = self.state_positions[from_state]
                     to_pos = self.state_positions[to_state]
@@ -624,7 +675,7 @@ class FA:
         # Vector vuông góc để lệch ra
         perp_dx = -dy
         perp_dy = dx
-        curve_offset = distance * 0.5  # Độ cong = 40% khoảng cách
+        curve_offset = distance * 0.6  # Độ cong = 40% khoảng cách
         
         control_x = mid_x + perp_dx * curve_offset # Quay xuống (đổi lại thành cộng -> quay lên)
         control_y = mid_y - perp_dy * curve_offset

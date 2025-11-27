@@ -1,6 +1,7 @@
 import pygame
 from Codes.Scenes.SceneBase import Scene
 from Codes.Scenes.MainGameplayScene import MainGamePlayScene
+from Codes.Scenes.SettingScene import SettingScene
 from Codes.Scenes.UILayerScene import UILayerScene
 from Codes.Components.Buttons import *
 from Codes.Utils.FrameLoader import FrameLoader
@@ -32,6 +33,8 @@ class MainMenuScene(Scene):
         """
             Thêm main_game scene và ui scene lên top của manager
         """
+        # Play audio
+        self.game.audio.play_sfx('button_press')
         if not self.game.main_scene: # Lần đầu vào game, main_game và ui chưa được thêm vào stack
             new_scene = MainGamePlayScene(self.game)
             self.game.main_scene = new_scene
@@ -39,18 +42,24 @@ class MainMenuScene(Scene):
 
             self.game.manager.push(new_scene)
             self.game.manager.push(new_ui_scene)
+            self.paused = True
         else: # main_game đã có nhưng bị xóa khỏi tách
+            self.paused = True
             self.game._on_reload_main_scene()
-    
+        
     def _on_setting_btn_pressed(self):
         """
             Thêm setting scene vào top
         """
-        # Sẽ thêm vào sau - 20/11/2025: hiện chưa có
-        pass
-
+        # Sẽ thêm vào sau - 20/11/2025: hiện chưa có --> đã thêm ngày 28/11/2025
+        # Play audio
+        self.game.audio.play_sfx('button_press')
+        if not isinstance(self.game.manager.top(), SettingScene):
+            self.game.manager.push(SettingScene(self.game))
+        
     def update(self, dt):
-        pass
+        # Play audio
+        self.game.audio.play_bgm('menu')
 
     def handle_events(self, events): # return true or false
         for event in events:

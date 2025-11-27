@@ -78,6 +78,8 @@ class UILayerScene(Scene):
         return False
 
     def _on_pause_button_pressed(self):
+        # Play audio
+        self.game.audio.play_sfx('button_press')
         # Thêm pause menu scene
         if not isinstance(self.game.manager.top(), PauseMenuScene):
             self.game.manager.push(PauseMenuScene(self.game))

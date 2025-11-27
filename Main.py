@@ -9,6 +9,7 @@ from Codes.Scenes.MainGameplayScene import MainGamePlayScene
 from Codes.Scenes.PauseMenuScene import PauseMenuScene
 from Codes.Scenes.UILayerScene import UILayerScene
 from Codes.Mechanics.Score import Score
+from Codes.Components.Audio import Audio
 
 class Game:
 # ---- Variables ------
@@ -35,6 +36,9 @@ class Game:
 
         # score manager
         self.score : Score = None
+
+        # audio
+        self.audio = Audio()
 
         # INIT PYGAME
         pygame.init()
@@ -66,9 +70,11 @@ class Game:
             events = pygame.event.get()
 
             # Handle window resize events first so we can update the display surface
-            for evt in events:
-                if evt.type == pygame.VIDEORESIZE:
-                    self.window_size = evt.size
+            for event in events:
+                if event.type == pygame.QUIT:
+                    self.running = False
+                if event.type == pygame.VIDEORESIZE:
+                    self.window_size = event.size
                     self.screen = pygame.display.set_mode(self.window_size, pygame.RESIZABLE, 32)
 
             # Compute scale from base -> window so we can remap input coordinates
@@ -77,10 +83,10 @@ class Game:
 
             # Remap mouse positions in events to base (logical) coordinates for scenes
             remapped_events = []
-            for e in events:
+            for event in events:
                 # copy event attributes and remap 'pos' if present
                 try:
-                    ed = e.dict.copy()
+                    ed = event.dict.copy()
                 except Exception:
                     ed = {}
                 if 'pos' in ed and ed['pos'] is not None:
@@ -88,18 +94,16 @@ class Game:
                     ed['pos'] = (int(px / scale_x), int(py / scale_y))
                 # Build a new event using the possibly-updated dict; fallback to original event if creation fails
                 try:
-                    new_e = pygame.event.Event(e.type, ed)
-                    remapped_events.append(new_e)
+                    new_event = pygame.event.Event(event.type, ed)
+                    remapped_events.append(new_event)
                 except Exception:
-                    remapped_events.append(e)
+                    remapped_events.append(event)
 
             # Run the scene manager's frame drawing to the base render surface
+            if self.score.combo == 1 or self.score.combo == 5:
+                self.audio.play_sfx('collect')
             self.render_surface.fill((0,0,0))
             self.manager.run_frame(delta_time, remapped_events, self.render_surface)
-
-            for event in events:
-                if event.type == pygame.QUIT:
-                    self.running = False
 
             # Scale the render surface to the actual window and blit
             try:

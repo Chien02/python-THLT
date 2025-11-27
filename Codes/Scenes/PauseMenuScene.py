@@ -1,6 +1,7 @@
 import pygame
 
 from Codes.Scenes.SceneBase import Scene
+from Codes.Scenes.SettingScene import SettingScene
 from Codes.Components.Buttons import *
 from Codes.Utils.FrameLoader import FrameLoader
 from Codes.Utils.SpriteFrame import SpriteFrames
@@ -29,6 +30,7 @@ class PauseMenuScene(Scene):
         # For managing buttons
         self.resume_button._on_pressed = self._on_resume_button_pressed
         self.home_button._on_pressed = self._on_home_button_pressed
+        self.setting_button._on_pressed = self._on_setting_button_pressed
         self.buttons = [self.resume_button, self.setting_button, self.home_button]
 
         # Machine's Animation
@@ -59,10 +61,21 @@ class PauseMenuScene(Scene):
             self.game.manager.scenes[-2].paused = False
 
     def _on_resume_button_pressed(self):
+        # Play audio
+        self.game.audio.play_sfx('button_press')
         self.resume_main_scene()
     
     def _on_home_button_pressed(self):
+        # Play audio
+        self.game.audio.play_sfx('button_press')
         self.game.manager.back_to_scene('main_menu')
+    
+    def _on_setting_button_pressed(self):
+        """Thêm màn hình setting lên trên top của stack"""
+        # Play audio
+        self.game.audio.play_sfx('button_press')
+        if not isinstance(self.game.manager.top(), SettingScene):
+            self.game.manager.push(SettingScene(self.game))
 
     def update(self, dt):
         self.machine.update(dt)

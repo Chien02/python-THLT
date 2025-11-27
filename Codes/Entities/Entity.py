@@ -97,6 +97,6 @@ class Entity:
         rect = scaled_frame.get_rect(center=self.collision_rect.center)
         screen.blit(scaled_frame, rect)
 
-        # For debugging: draw collision rect
-        pygame.draw.rect(screen, (255, 0, 0), self.collision_rect, 1)
+        # # For debugging: draw collision rect
+        # pygame.draw.rect(screen, (255, 0, 0), self.collision_rect, 1)
         

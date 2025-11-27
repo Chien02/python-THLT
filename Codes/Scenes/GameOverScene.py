@@ -45,13 +45,27 @@ class GameOverScene(Scene):
         return True  # thường menu chắn hết input, nên trả True
 
     def _on_replay_button_pressed(self):
+        # Play audio
+        self.game.audio.play_sfx('button_press')
+        self.paused = True
         self.game.manager.pop()
         self.game._on_reload_main_scene()
     
     def _on_home_button_pressed(self):
+        # Play audio
+        self.game.audio.play_sfx('button_press')
+        self.paused = True
         self.game.manager.back_to_scene('man_menu')
 
+    def on_enter(self):
+        # Play gameover sound effect when enter scene
+        if self.game:
+            self.game.audio.play_sfx('gameover')
+
     def update(self, dt):
+        # Play audio
+        self.game.audio.play_bgm('gameover')
+
         self.machine.update(dt)
         self.machine.health.current_health = self.game.main_scene.machine.health.current_health
 

@@ -47,6 +47,10 @@ class SceneManager:
         for i in range(0, count-1):
             self.pop()
 
+        current_scene = self.top()
+        if current_scene.paused:
+            current_scene.paused = False
+
 
     def handle_events(self, events):
         # truyền events từ top -> bottom; nếu scene trả True (đã xử lý/nhận được input của nó) thì dừng, ko truyền xuống nữa.

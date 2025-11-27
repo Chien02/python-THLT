@@ -7,12 +7,13 @@ from Codes.Utils.FrameLoader import FrameLoader
 class ChatboxSpawner:
 
     CHATBOX_STATE = ('idle', 'picked')
-    def __init__(self, spawn_interval=4.0, chatbox_lifetime=5.0, machine_pos=None):
+    def __init__(self, game, spawn_interval=4.0, chatbox_lifetime=5.0, machine_pos=None):
         """
         base_sprites: danh sách các sprite (ít nhất 3 loại)
         spawn_interval: thời gian giữa các lượt spawn
         chatbox_lifetime: thời gian tồn tại của mỗi chatbox
         """
+        self.game = game
         chatbox_size = (216, 216)
         self.base_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Elements/Chatbox/chatbox.png", chatbox_size[0], chatbox_size[1], 6)
         self.picked_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/Elements/Chatbox/chatbox_picked.png", chatbox_size[0], chatbox_size[1], 6)
