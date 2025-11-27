@@ -376,8 +376,6 @@ class FA:
         for to_list in self.transitions.get(self.current_state, {}).values():
             for state in to_list:
                 self.state_states[state]['current_sprite'] = SPRITE_TYPE.CURRENT.value
-        
-        
     
     def check_pattern(self):
         """Kiểm tra xem có output có trùng với mẫu không"""

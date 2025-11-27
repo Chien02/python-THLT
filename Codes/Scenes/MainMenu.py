@@ -16,11 +16,17 @@ class MainMenuScene(Scene):
         spacing = 60
         self.align_x = self.game.base_size[0] - offset_x
 
+        self._bg_orig = pygame.image.load("Assets/Images/Backgrounds/menubackground.png").convert_alpha()
+        self._bg_scaled = None
+        self._bg_scaled_size = None
+
         button_size = (144, 48)
         button_pos_x = self.align_x - (button_size[0] // 2)
         button_pos_y = (self.game.base_size[1] // 2) + offset_y
+
         self.play_btn_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/UIs/Buttons/play.png", button_size[0], button_size[1], 3)
         self.setting_btn_sprites = FrameLoader.load_frames_from_sheet("Assets/Images/UIs/Buttons/menu_setting.png", button_size[0], button_size[1], 3)
+        
         self.play_btn = ButtonWithSprites(button_pos_x, button_pos_y, self.play_btn_sprites)
         self.setting_btn = ButtonWithSprites(button_pos_x, button_pos_y + spacing * 1, self.setting_btn_sprites)
 
@@ -72,9 +78,23 @@ class MainMenuScene(Scene):
             Hiển thị background chính, title, 2 nút [play, setting]
             Khi nút play được bấm, gọi callback thêm 2 scene (MainGamePlayScene, UILayerScene)
         """
+        # Vẽ nền: scale background only when screen size changes (cache result)
+        cur_size = screen.get_size()
+        # Note: scaling is done to the base (logical) size; the game will
+        # later scale the whole render surface to the real window size.
+        bg_rect = self._bg_orig.get_rect()
+        if bg_rect.width != self.game.base_size[0] or bg_rect.height != self.game.base_size[1]:
+            self._bg_scaled = pygame.transform.scale(self._bg_orig, (self.game.base_size[0], self.game.base_size[1]))
+            self._bg_scaled_size = (self.game.base_size[0], self.game.base_size[1])
+
+        if self._bg_scaled:
+            screen.blit(self._bg_scaled, (0, 0))
+        else:
+            screen.blit(self._bg_orig, (0, 0))
+
         # Tittle
         WHITE = (255, 255, 255)
-        font = pygame.font.Font(None, 67)
+        font = pygame.font.Font(None, 75)
         offset_y = 75
         title_pos_x = self.align_x
         title_pos_y = self.game.base_size[1] * 1 // 4
